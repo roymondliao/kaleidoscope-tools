@@ -1,0 +1,16 @@
+{
+    "name": "official-claude-code",
+    "description": "Official Claude Code development tools and skills",
+    "version": "1.0.0",
+    "author": {
+        "name": "Anthropic",
+        "email": "anthropic@anthropic.com"
+    },
+    "repository": "https://github.com/anthropics/claude-code",
+    "keywords": [
+        "development",
+        "skills",
+        "claude-code"
+    ],
+    "strict": false
+}
