@@ -1,0 +1,16 @@
+{  
+  "name": "dev-development-skills",
+  "version": "1.0.0",
+  "description": "A curated marketplace of practical Claude Skills for enhancing productivity across Claude.ai, Claude Code, and the Claude API",
+  "owner": {
+    "name": "ComposioHQ",
+    "email": "tech@composio.dev"
+  },
+  "plugins": [
+    {
+      "name": "dev-plugin",
+      "source": "./dev-plugin",
+      "description": "Plugin under development"
+    }
+  ]
+}
