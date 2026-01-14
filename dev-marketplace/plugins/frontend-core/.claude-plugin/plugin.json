@@ -1,0 +1,12 @@
+{
+    "name": "frontend-core",
+    "version": "1.0.0",
+    "description": "Collection of development tools and skills for frontend development",
+    "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+    "commands": [
+        "./commands"
+    ],
+    "skills": [
+        "./skills"
+    ]
+}

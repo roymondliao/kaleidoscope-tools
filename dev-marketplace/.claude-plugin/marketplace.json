@@ -19,6 +19,16 @@
         "email": "roymond20@gmail.com"
       }
     },
+      {
+      "name": "frontend-core",
+      "description": "Core frontend development tools and skills",
+      "source": "./plugins/frontend-core",
+      "category": "frontend development",
+      "author": {
+        "name": "Roymond",
+        "email": "roymond20@gmail.com"
+      }
+    },
     {
       "name": "official-claude-code",
       "description": "Official Claude Code development tools and skills",
