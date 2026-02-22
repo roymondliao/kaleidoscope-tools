@@ -4,6 +4,8 @@ This template provides a standard structure for creating well-organized Jira iss
 
 ## Standard Template Structure
 
+**IMPORTANT: Use English for all content** - Write both the issue summary (title) and description in English for consistency and cross-team collaboration, regardless of the language used by the user.
+
 ### Why
 Explain the motivation and value proposition:
 - Business value or problem being solved
