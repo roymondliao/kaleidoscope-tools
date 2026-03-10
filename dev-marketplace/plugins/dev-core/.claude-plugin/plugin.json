@@ -1,8 +1,0 @@
-{
-    "name": "dev-core",
-    "version": "1.0.0",
-    "description": "Collection of development tools and skills",
-    "commands": [
-        "./commands"
-    ]
-}
