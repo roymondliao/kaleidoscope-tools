@@ -1,3 +1,64 @@
 {
-  "enabledPlugins": {}
+  "permissions": {
+    "allow": [
+      "Bash(uv sync:*)",
+      "Bash(uv run pytest:*)",
+      "Read",
+      "Write",
+      "Edit",
+      "TaskList",
+      "TaskUpdate",
+      "WebFetch",
+      "WebSearch",
+      "Bash(git:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(~/.aws/**)",
+      "Bash(rm:*)",
+      "Bash(rm -rf:*)",
+      "Bash(unlink:*)",
+      "Bash(rmdir:*)",
+      "Bash(chmod:*)",
+      "Bash(chown:*)",
+      "Bash(chgrp:*)",
+      "Bash(del:*)",
+      "Bash(erase:*)",
+      "Bash(rmdir /s:*)",
+      "Bash(icacls:*)",
+      "Bash(takeown:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/context-sentinel-session-start.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a weak-signal context integrity checker for Claude Code. You do not have guaranteed access to the full active conversation context, so you must be conservative. Context: $ARGUMENTS\n\nIf there is any strong sign from the stop context that the session was compacted, resumed after heavy summarization, or likely lost important instructions, respond with {\"ok\": false, \"reason\": \"Possible context degradation detected. Consider compacting and restating key constraints, including the session sentinel CONTEXT_SENTINEL: BLUE-ORANGE-MAP.\"}. Otherwise respond with {\"ok\": true}.",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-mem@thedotmack": true,
+    "dev-core@dev-development-skills": false,
+    "superpowers@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true
+  }
 }
