@@ -50,8 +50,10 @@ A claim becomes consensus only if it survives structured cross-examination from 
         stage4-arbitration.md
         dossier.md
   outputs/
-    decisions/              # runtime artifacts, git-ignored
+    decisions/              # runtime artifacts, git-ignored via .claude/.gitignore
 ```
+
+> **Note:** Add `.claude/outputs/` to `.gitignore` (or `.claude/.gitignore`) to prevent runtime artifacts from being committed. Template and agent definition files should remain tracked.
 
 ### Runtime Artifacts
 
