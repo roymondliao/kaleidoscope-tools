@@ -1,9 +1,22 @@
 ---
 name: deliberate-consensus
 description: Run a structured deliberation workflow with stance generation, cross-examination, belief revision, arbitration, and dossier generation. Use when a decision needs adversarial testing rather than a single opinion.
+allowed-tools:
+- Read
+- Glob
+- Grep
+- Write
+- Bash(./scripts/timestamp.sh)
+- Bash(./scripts/validate-consensus.sh)
+user-invocable: true
+disable-model-invocation: true
 ---
 
 # Deliberative Consensus Workflow
+
+## Basic Setting
+
+Read the `config.json` file to understand the basic settings.
 
 ## Core Principle
 
@@ -56,12 +69,11 @@ You MUST follow this state machine. No skipping stages. No jumping to conclusion
 
 ## Sub Agents
 
-| Sub Agent | File | Role |
-|-----------|------|------|
-| analytical-critic | `.claude/agents/analytical-critic.md` | Logical/technical analysis |
-| risk-critic | `.claude/agents/risk-critic.md` | Risk/failure analysis |
-| pragmatic-critic | `.claude/agents/pragmatic-critic.md` | Practical/delivery analysis |
-| arbiter | `.claude/agents/arbiter.md` | Final ruling & dossier |
+- Logical/technical analysis: `Agent("analytical-critic")`
+- Risk/failure analysis: `Agent("risk-critic")`
+- Practical/delivery analysis: `Agent("pragmatic-critic")`
+- Final ruling & dossier: `Agent("arbiter")`
+
 
 ## How to Spawn Sub Agents
 
@@ -84,8 +96,8 @@ Agent(
 ## Templates & Scripts
 
 - Schema references: `templates/`
-- Timestamp: run `bash .claude/skills/deliberate-consensus/scripts/timestamp.sh` to get accurate ISO 8601 timestamps
-- Validation: run `bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh <stage> <file>` after each stage to verify artifacts
+- Timestamp: run `bash ./scripts/timestamp.sh` to get accurate ISO 8601 timestamps
+- Validation: run `bash ./scripts/validate-artifact.sh <stage> <file>` after each stage to verify artifacts
 
 ---
 
@@ -96,7 +108,7 @@ Agent(
 **Steps:**
 1. Generate a `decision_id` in format `YYYYMMDD-HHMMSS-<short-slug>` (e.g., `20260329-143022-review-auth-middleware`)
 2. Create the output directory: `mkdir -p .claude/outputs/decisions/{decision_id}`
-3. Get timestamp: `bash .claude/skills/deliberate-consensus/scripts/timestamp.sh`
+3. Get timestamp: `bash ./scripts/timestamp.sh`
 4. Analyze the user's request and relevant codebase to formulate the problem
 5. Write `stage0-framing.md` to `.claude/outputs/decisions/{decision_id}/stage0-framing.md`
    - Follow the schema in `templates/stage0-framing.md`
@@ -110,12 +122,12 @@ Agent(
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Read ALL THREE agent definition files:
-   - `.claude/agents/analytical-critic.md`
-   - `.claude/agents/risk-critic.md`
-   - `.claude/agents/pragmatic-critic.md`
+1. Agents:
+   - `Agent("analytical-critic")`
+   - `Agent("risk-critic")`
+   - `Agent("pragmatic-critic")`
 
-2. Spawn ALL THREE agents simultaneously using parallel Agent tool calls (model: haiku).
+2. Spawn ALL THREE agents simultaneously using parallel Agent tool calls.
 
    For each agent, embed their role from the agent file and add:
    ```
@@ -125,29 +137,29 @@ Agent(
 
    {FULL ROLE DEFINITION FROM AGENT FILE}
 
-   Read the framing document at:
-   .claude/outputs/decisions/{decision_id}/stage0-framing.md
+   Read EXACTLY these files, in this order:
+   1. .claude/outputs/decisions/{decision_id}/stage0-framing.md
+   2. {primary document path from framing}
+   3. {supporting document paths from framing, if any}
+   4. .claude/skills/deliberate-consensus/templates/stage1-stance.md
 
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
-   Investigate the codebase as needed using Read, Glob, and Grep.
-
    Write your stance to:
    .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md
-
-   Follow the output schema in:
-   .claude/skills/deliberate-consensus/templates/stage1-stance.md
 
    IMPORTANT:
    - Form your stance INDEPENDENTLY — do not look for other critics' outputs
    - Every critical claim must cite evidence (file:line or command output)
    - Mark unsupported claims as [HYPOTHESIS]
+   - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
    ```
 
 3. Wait for all agents to complete
 
 4. Validate artifacts:
-   ```
+
+   ```bash
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
@@ -169,7 +181,7 @@ Agent(
 **Steps:**
 1. Read ALL THREE agent definition files (same as Stage 1)
 
-2. Spawn ALL THREE agents simultaneously (model: haiku).
+2. Spawn ALL THREE agents simultaneously.
 
    For each agent, embed their role and add:
    ```
@@ -181,28 +193,27 @@ Agent(
 
    Your identity: {agent-name}
 
-   You MUST attack the following two critics. Read their stances carefully:
-   - {other-agent-1}: .claude/outputs/decisions/{decision_id}/stage1-{other-agent-1}.md
-   - {other-agent-2}: .claude/outputs/decisions/{decision_id}/stage1-{other-agent-2}.md
+   Read EXACTLY these files:
+   1. .claude/outputs/decisions/{decision_id}/stage1-{other-agent-1}.md
+   2. .claude/outputs/decisions/{decision_id}/stage1-{other-agent-2}.md
+   3. .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md (your own stance, for reference)
+   4. .claude/skills/deliberate-consensus/templates/stage2-cross-exam.md
 
-   Before attacking, QUOTE the specific claim you are targeting from their stance.
-
-   You may also reference your own Stage 1 stance at:
-   .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md
+   You MUST attack both {other-agent-1} and {other-agent-2}.
+   Before each attack, QUOTE the specific claim you are targeting from their stance.
 
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your cross-examination to:
    .claude/outputs/decisions/{decision_id}/stage2-{agent-name}-cross-exam.md
 
-   Follow the output schema in:
-   .claude/skills/deliberate-consensus/templates/stage2-cross-exam.md
+   Do NOT search for or read any files beyond those listed above.
    ```
 
 3. Wait for all agents to complete
 
 4. Validate artifacts:
-   ```
+   ```bash
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 2 {each cross-exam file}
    ```
 
@@ -229,26 +240,23 @@ Agent(
 
    Your identity: {agent-name}
 
-   Read the cross-examination attacks directed at YOU from the other two critics:
-   - .claude/outputs/decisions/{decision_id}/stage2-{other-agent-1}-cross-exam.md
-   - .claude/outputs/decisions/{decision_id}/stage2-{other-agent-2}-cross-exam.md
-
-   Also re-read your original Stage 1 stance:
-   .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md
+   Read EXACTLY these files:
+   1. .claude/outputs/decisions/{decision_id}/stage2-{other-agent-1}-cross-exam.md (attacks on you)
+   2. .claude/outputs/decisions/{decision_id}/stage2-{other-agent-2}-cross-exam.md (attacks on you)
+   3. .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md (your original stance)
+   4. .claude/skills/deliberate-consensus/templates/stage3-revision.md
 
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your belief revision to:
    .claude/outputs/decisions/{decision_id}/stage3-{agent-name}-revision.md
 
-   Follow the output schema in:
-   .claude/skills/deliberate-consensus/templates/stage3-revision.md
-
    IMPORTANT:
    - Be intellectually honest — if an attack is valid, acknowledge it
    - Changing your position is a sign of rigor, not weakness
    - You must explicitly state whether your position changed and why
    - Do not introduce entirely new arguments — respond to the attacks
+   - Do NOT search for or read any files beyond those listed above
    ```
 
 3. Wait for all agents to complete
@@ -285,28 +293,22 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
 
    {FULL ROLE DEFINITION FROM AGENT FILE}
 
-   Read the following artifacts:
+   Read EXACTLY these files, in this order:
+   1. .claude/outputs/decisions/{decision_id}/stage0-framing.md
+   2. .claude/outputs/decisions/{decision_id}/stage3-analytical-critic-revision.md
+   3. .claude/outputs/decisions/{decision_id}/stage3-risk-critic-revision.md
+   4. .claude/outputs/decisions/{decision_id}/stage3-pragmatic-critic-revision.md
+   5. .claude/skills/deliberate-consensus/templates/stage4-arbitration.md
 
-   Framing (required):
-   .claude/outputs/decisions/{decision_id}/stage0-framing.md
-
-   Stage 3 — Final Revised Positions (required — these contain summaries of the full debate arc):
-   .claude/outputs/decisions/{decision_id}/stage3-analytical-critic-revision.md
-   .claude/outputs/decisions/{decision_id}/stage3-risk-critic-revision.md
-   .claude/outputs/decisions/{decision_id}/stage3-pragmatic-critic-revision.md
-
-   Stage 1 — Original Stances (optional reference if you need more detail):
-   .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
-   .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
-   .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
+   If you need more detail on a critic's original position, you may OPTIONALLY read:
+   - .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
+   - .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
+   - .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
 
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your arbitration ruling to:
    .claude/outputs/decisions/{decision_id}/stage4-arbiter.md
-
-   Follow the output schema in:
-   .claude/skills/deliberate-consensus/templates/stage4-arbitration.md
 
    IMPORTANT:
    - Do NOT introduce new arguments not raised by the critics
@@ -315,6 +317,7 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    - Always produce a minority report
    - Always list unresolved questions
    - Include concrete Next Actions for the user
+   - Do NOT search for or read any files beyond those listed above
    ```
 
 3. Wait for arbiter to complete
