@@ -1,0 +1,30 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "kaleidoscope-tools",
+  "metadata": {
+    "version": "1.1.0",
+    "description": "Collection of cool development tools which include skills, agents, and hooks"
+  },
+  "owner": {
+    "name": "Roymond",
+    "email": "roymond20@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "kaleidoscope-tools",
+      "description": "Kaleidoscope tools",
+      "source": "./",
+      "category": "development",
+      "author": {
+        "name": "Roymond",
+        "email": "roymond20@gmail.com"
+      },
+      "homepage": "https://github.com/roymondliao/kaleidoscope-tools",
+      "repository": "https://github.com/roymondliao/kaleidoscope-tools",
+      "license": "MIT",
+      "keywords": ["development", "tools", "kaleidoscope"],
+      "tags": ["agents", "skills", "hooks"],
+      "strict": false
+    }
+  ]
+}

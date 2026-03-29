@@ -6,8 +6,8 @@ allowed-tools:
 - Glob
 - Grep
 - Write
-- Bash(./scripts/timestamp.sh)
-- Bash(./scripts/validate-consensus.sh)
+- Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)
+- Bash(.claude/skills/deliberate-consensus/scripts/validate-artifact.sh *)
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -75,12 +75,13 @@ Defined in `config.json` under `agents`. Default:
 
 ## How to Spawn Sub Agents
 
-Claude Code's Agent tool does not directly load custom agent definitions from `.claude/agents/`. You must:
+Agents defined in `.claude/agents/` are auto-discovered at session startup. Invoke them directly:
 
-1. **Read** the agent definition file (e.g., `.claude/agents/{agent-name}.md`)
-2. **Extract** the role description and stage behaviors from its content
-3. **Embed** the role instructions into the Agent tool's `prompt` parameter
-4. Use `model: "{config.sub_agent_model}"` for all sub agent spawns
+```
+Agent(subagent_type: "{agent-name}", model: "{config.sub_agent_model}", prompt: "...")
+```
+
+The system automatically injects the agent's role definition. Do NOT read or embed agent files manually.
 
 ## Templates & Scripts
 
@@ -111,20 +112,16 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Agents:
-   - `Agent("analytical-critic")`
-   - `Agent("risk-critic")`
-   - `Agent("pragmatic-critic")`
+1. Spawn ALL THREE critic agents simultaneously using parallel Agent tool calls:
+   - `Agent(subagent_type: "analytical-critic", model: "{config.sub_agent_model}")`
+   - `Agent(subagent_type: "risk-critic", model: "{config.sub_agent_model}")`
+   - `Agent(subagent_type: "pragmatic-critic", model: "{config.sub_agent_model}")`
 
-2. Spawn ALL THREE agents simultaneously using parallel Agent tool calls.
-
-   For each agent, embed their role from the agent file and add:
+   Each agent's prompt:
    ```
    You are executing Stage 1 (Stance Generation) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
-
-   {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Read EXACTLY these files, in this order:
    1. {config.output_dir}/{decision_id}/stage0-framing.md
@@ -146,9 +143,9 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
    - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
    ```
 
-3. Wait for all agents to complete
+2. Wait for all agents to complete
 
-4. Validate artifacts:
+3. Validate artifacts:
 
    ```bash
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 {config.output_dir}/{decision_id}/stage1-analytical-critic.md
@@ -156,12 +153,12 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 {config.output_dir}/{decision_id}/stage1-pragmatic-critic.md
    ```
 
-5. Check results (threshold from `config.min_agents`):
+4. Check results (threshold from `config.min_agents`):
    - If < {config.min_agents} succeeded → **ABORT**: notify user and explain which agents failed
    - If only {config.min_agents} succeeded → proceed but note limited perspectives
    - If 3 succeeded → proceed normally
 
-6. Announce: "Stage 1 complete. {N}/3 stances generated. Proceeding to cross-examination."
+5. Announce: "Stage 1 complete. {N}/3 stances generated. Proceeding to cross-examination."
 
 ---
 
@@ -170,17 +167,16 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Read ALL THREE agent definition files (same as Stage 1)
+1. Spawn ALL THREE critic agents simultaneously:
+   - `Agent(subagent_type: "analytical-critic", model: "{config.sub_agent_model}")`
+   - `Agent(subagent_type: "risk-critic", model: "{config.sub_agent_model}")`
+   - `Agent(subagent_type: "pragmatic-critic", model: "{config.sub_agent_model}")`
 
-2. Spawn ALL THREE agents simultaneously.
-
-   For each agent, embed their role and add:
+   Each agent's prompt:
    ```
    You are executing Stage 2 (Cross-Examination) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
-
-   {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Your identity: {agent-name}
 
@@ -201,14 +197,14 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
    Do NOT search for or read any files beyond those listed above.
    ```
 
-3. Wait for all agents to complete
+2. Wait for all agents to complete
 
-4. Validate artifacts:
+3. Validate artifacts:
    ```bash
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 2 {each cross-exam file}
    ```
 
-5. Announce: "Stage 2 complete. Cross-examinations generated. Proceeding to belief revision."
+4. Announce: "Stage 2 complete. Cross-examinations generated. Proceeding to belief revision."
 
 ---
 
@@ -217,17 +213,16 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Read ALL THREE agent definition files (same as Stage 1)
+1. Spawn ALL THREE critic agents simultaneously:
+   - `Agent(subagent_type: "analytical-critic", model: "{config.sub_agent_model}")`
+   - `Agent(subagent_type: "risk-critic", model: "{config.sub_agent_model}")`
+   - `Agent(subagent_type: "pragmatic-critic", model: "{config.sub_agent_model}")`
 
-2. Spawn ALL THREE agents simultaneously (model: haiku).
-
-   For each agent, embed their role and add:
+   Each agent's prompt:
    ```
    You are executing Stage 3 (Belief Revision) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
-
-   {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Your identity: {agent-name}
 
@@ -250,20 +245,20 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
    - Do NOT search for or read any files beyond those listed above
    ```
 
-3. Wait for all agents to complete
+2. Wait for all agents to complete
 
-4. Validate artifacts:
+3. Validate artifacts:
    ```
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 3 {each revision file}
    ```
 
-5. **Evidence Gap Check:**
+4. **Evidence Gap Check:**
    - Read each revision's "Attacks Not Answered" section
    - If critical evidence gaps exist AND max_rounds not reached → loop back to Stage 2
    - If enough evidence OR max_rounds reached → proceed to Stage 4
    - If critical evidence is entirely missing → **ABORT** with ruling = `investigate`
 
-6. Announce: "Stage 3 complete. Belief revisions generated. Proceeding to arbitration."
+5. Announce: "Stage 3 complete. Belief revisions generated. Proceeding to arbitration."
 
 ---
 
@@ -274,15 +269,14 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
 Stage 4 produces the **final output** of the deliberation. The Arbiter reads the revision artifacts (which contain summaries of the full deliberation arc) and the framing, then produces the ruling, minority report, and next actions in a single document.
 
 **Steps:**
-1. Read the arbiter agent definition: `.claude/agents/arbiter.md`
+1. Spawn the arbiter:
+   - `Agent(subagent_type: "arbiter", model: "{config.sub_agent_model}")`
 
-2. Spawn the arbiter (model: haiku) with role embedded:
+   Prompt:
    ```
    You are executing Stage 4 (Arbitration & Dossier) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
-
-   {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Read EXACTLY these files, in this order:
    1. {config.output_dir}/{decision_id}/stage0-framing.md
@@ -306,21 +300,21 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    - Do NOT search for or read any files beyond those listed above
    ```
 
-3. Wait for arbiter to complete
+2. Wait for arbiter to complete
 
-4. Validate artifact:
+3. Validate artifact:
    ```
    bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 4 {config.output_dir}/{decision_id}/stage4-arbiter.md
    ```
 
-5. Read `stage4-arbiter.md` and present the summary to the user:
+4. Read `stage4-arbiter.md` and present the summary to the user:
    - Ruling and consensus type
    - Key belief changes
    - Minority report highlights
    - Unresolved questions
    - Next actions
 
-6. Announce: "Deliberation complete. Full ruling at {path}."
+5. Announce: "Deliberation complete. Full ruling at {path}."
 
 ---
 

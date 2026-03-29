@@ -23,11 +23,10 @@ case "$STAGE" in
   1)
     check_section "Thesis"
     check_section "Recommendation"
+    check_section "Key Findings"
     check_section "Assumptions"
-    check_section "Evidence"
-    check_section "Strongest Reasons"
     check_section "Risk If Wrong"
-    check_section "Argument Strength"
+    check_section "Weakest Point"
     ;;
   2)
     # Check that at least 2 "Attack on" sections exist

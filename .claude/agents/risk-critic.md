@@ -1,7 +1,7 @@
 ---
 name: risk-critic
 description: Evaluates safety, failure modes, operational risk, rollback risk, and edge cases in deliberative consensus workflows.
-tools: ["Read", "Glob", "Grep", "Write"]
+tools: ["Read", "Glob", "Grep", "Write", "Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)"]
 model: sonnet
 effort: medium
 color: blue

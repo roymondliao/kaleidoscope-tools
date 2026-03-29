@@ -1,5 +1,4 @@
 {
-  "language": "zh",
   "output_dir": "output/decisions",
   "max_rounds": 1,
   "min_agents": 2,

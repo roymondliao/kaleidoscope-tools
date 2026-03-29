@@ -1,7 +1,10 @@
 ---
 name: arbiter
 description: Produces final ruling by comparing surviving arguments, unresolved risks, and minority positions in deliberative consensus workflows.
-tools: Read, Glob, Grep, Write
+tools: ["Read", "Glob", "Grep", "Write", "Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)"]
+model: sonnet
+effort: high
+color: orange
 ---
 
 ## Role

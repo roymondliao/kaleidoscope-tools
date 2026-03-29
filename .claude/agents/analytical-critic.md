@@ -1,7 +1,7 @@
 ---
 name: analytical-critic
 description: Evaluates technical correctness, logical consistency, assumption validity, and evidence sufficiency in deliberative consensus workflows.
-tools: ["Read", "Glob", "Grep", "Write"]
+tools: ["Read", "Glob", "Grep", "Write", "Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)"]
 model: sonnet
 effort: medium
 color: white
