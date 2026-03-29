@@ -141,6 +141,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    - Keep total output under 150 lines. Be precise, not exhaustive.
    - Maximum 5 key findings, 3 assumptions. No extra sections.
    - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
+   - Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
    ```
 
 2. Wait for all agents to complete
@@ -195,6 +196,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    {config.output_dir}/{decision_id}/stage2-{agent-name}-cross-exam.md
 
    Do NOT search for or read any files beyond those listed above.
+   Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
    ```
 
 2. Wait for all agents to complete
@@ -243,6 +245,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    - You must explicitly state whether your position changed and why
    - Do not introduce entirely new arguments — respond to the attacks
    - Do NOT search for or read any files beyond those listed above
+   - Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
    ```
 
 2. Wait for all agents to complete
@@ -298,6 +301,7 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    - Always list unresolved questions
    - Include concrete Next Actions for the user
    - Do NOT search for or read any files beyond those listed above
+   - Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
    ```
 
 2. Wait for arbiter to complete
