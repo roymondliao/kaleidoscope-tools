@@ -10,7 +10,7 @@ stage: 1
 type: stance
 agent: "{analytical-critic | risk-critic | pragmatic-critic}"
 decision_id: "{decision_id}"
-timestamp: "{ISO 8601}"
+timestamp: "{run scripts/timestamp.sh}"
 ---
 ```
 
@@ -39,5 +39,9 @@ Top 2-3 reasons supporting your recommendation.
 ### Risk If Wrong
 What happens if your recommendation is followed but turns out to be wrong?
 
-### Confidence
-A number from 0.00 to 1.00 reflecting your confidence in this stance.
+### Argument Strength
+Describe the strength of your argument in prose. Explain:
+- Which parts of your argument are well-supported by evidence
+- Which parts are hypotheses that need further investigation
+- What is the weakest point in your own reasoning
+- How certain are you overall and why

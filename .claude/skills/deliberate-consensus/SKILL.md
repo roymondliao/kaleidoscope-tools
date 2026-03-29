@@ -13,31 +13,79 @@ Do NOT skip any stage. Do NOT produce a ruling without cross-examination. The va
 
 ## State Machine
 
+```dot
+digraph DeliberativeConsensusWorkflow {
+  rankdir=LR;
+  node [shape=box, style="rounded"];
+
+  START [shape=circle, label="START"];
+  END [shape=doublecircle, label="END"];
+
+  FRAMING [label="Stage 0\nTask Framing"];
+  STANCE_COLLECTION [label="Stage 1\nIndependent Stance Generation"];
+  CROSS_EXAM [label="Stage 2\nCross-Examination"];
+  BELIEF_REVISION [label="Stage 3\nBelief Revision"];
+  EVIDENCE_GAP_CHECK [label="Evidence Gap Check"];
+  ARBITRATION [label="Stage 4\nArbitration & Dossier"];
+
+  ABORT_INSUFFICIENT_AGENTS [label="Abort:\n< 2 valid stance agents"];
+  ABORT_INSUFFICIENT_EVIDENCE [label="Fallback:\nInvestigate / Need More Evidence"];
+
+  START -> FRAMING;
+  FRAMING -> STANCE_COLLECTION [label="problem_statement + evaluation_axes ready"];
+
+  STANCE_COLLECTION -> ABORT_INSUFFICIENT_AGENTS [label="< 2 agents succeeded"];
+  STANCE_COLLECTION -> CROSS_EXAM [label=">= 2 stance outputs ready"];
+
+  CROSS_EXAM -> BELIEF_REVISION [label="cross-attacks collected"];
+
+  BELIEF_REVISION -> EVIDENCE_GAP_CHECK [label="revisions submitted"];
+
+  EVIDENCE_GAP_CHECK -> CROSS_EXAM [label="new evidence requested\nand max_rounds not reached"];
+  EVIDENCE_GAP_CHECK -> ARBITRATION [label="enough evidence OR max_rounds reached"];
+  EVIDENCE_GAP_CHECK -> ABORT_INSUFFICIENT_EVIDENCE [label="critical evidence missing"];
+
+  ARBITRATION -> END [label="ruling + minority report + next actions ready"];
+
+  ABORT_INSUFFICIENT_AGENTS -> END;
+  ABORT_INSUFFICIENT_EVIDENCE -> END;
+}
 ```
-START → Stage 0 (Framing)
-      → Stage 1 (Stance Generation) [parallel x3]
-        → if < 2 agents succeeded → ABORT
-      → Stage 2 (Cross-Examination) [parallel x3]
-      → Stage 3 (Belief Revision) [parallel x3]
-      → Stage 4 (Arbitration) [single]
-      → Stage 5 (Dossier)
-      → END
-```
 
-You MUST follow this sequence. No skipping stages. No jumping to conclusions.
+You MUST follow this state machine. No skipping stages. No jumping to conclusions.
 
-## Agents
+## Sub Agents
 
-| Agent | File | Role |
-|-------|------|------|
+| Sub Agent | File | Role |
+|-----------|------|------|
 | analytical-critic | `.claude/agents/analytical-critic.md` | Logical/technical analysis |
 | risk-critic | `.claude/agents/risk-critic.md` | Risk/failure analysis |
 | pragmatic-critic | `.claude/agents/pragmatic-critic.md` | Practical/delivery analysis |
-| arbiter | `.claude/agents/arbiter.md` | Final ruling |
+| arbiter | `.claude/agents/arbiter.md` | Final ruling & dossier |
 
-## Templates
+## How to Spawn Sub Agents
 
-Schema references for each stage are in `.claude/skills/deliberate-consensus/templates/`.
+Claude Code's Agent tool does not directly load custom agent definitions from `.claude/agents/`. You must:
+
+1. **Read** the agent definition file (e.g., `.claude/agents/analytical-critic.md`)
+2. **Extract** the role description and stage behaviors from its content
+3. **Embed** the role instructions into the Agent tool's `prompt` parameter
+4. Use `model: "haiku"` for all sub agent spawns
+
+Example:
+```
+Agent(
+  description: "Analytical critic stance generation",
+  model: "haiku",
+  prompt: "{role instructions from agent file} + {stage-specific task}"
+)
+```
+
+## Templates & Scripts
+
+- Schema references: `templates/`
+- Timestamp: run `bash .claude/skills/deliberate-consensus/scripts/timestamp.sh` to get accurate ISO 8601 timestamps
+- Validation: run `bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh <stage> <file>` after each stage to verify artifacts
 
 ---
 
@@ -47,15 +95,13 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 
 **Steps:**
 1. Generate a `decision_id` in format `YYYYMMDD-HHMMSS-<short-slug>` (e.g., `20260329-143022-review-auth-middleware`)
-2. Create the output directory:
-   ```
-   mkdir -p .claude/outputs/decisions/{decision_id}
-   ```
-3. Analyze the user's request and relevant codebase to formulate the problem
-4. Write `stage0-framing.md` to `.claude/outputs/decisions/{decision_id}/stage0-framing.md`
+2. Create the output directory: `mkdir -p .claude/outputs/decisions/{decision_id}`
+3. Get timestamp: `bash .claude/skills/deliberate-consensus/scripts/timestamp.sh`
+4. Analyze the user's request and relevant codebase to formulate the problem
+5. Write `stage0-framing.md` to `.claude/outputs/decisions/{decision_id}/stage0-framing.md`
    - Follow the schema in `templates/stage0-framing.md`
    - Include: problem statement, evaluation axes, evidence scope, context
-5. Announce to the user: "Stage 0 complete. Framing written to {path}. Proceeding to stance generation."
+6. Announce to the user: "Stage 0 complete. Framing written to {path}. Proceeding to stance generation."
 
 ---
 
@@ -64,16 +110,25 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Spawn ALL THREE agents simultaneously using parallel Agent tool calls:
+1. Read ALL THREE agent definition files:
+   - `.claude/agents/analytical-critic.md`
+   - `.claude/agents/risk-critic.md`
+   - `.claude/agents/pragmatic-critic.md`
 
-   For each agent, use this prompt structure:
+2. Spawn ALL THREE agents simultaneously using parallel Agent tool calls (model: haiku).
+
+   For each agent, embed their role from the agent file and add:
    ```
    You are executing Stage 1 (Stance Generation) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
 
+   {FULL ROLE DEFINITION FROM AGENT FILE}
+
    Read the framing document at:
    .claude/outputs/decisions/{decision_id}/stage0-framing.md
+
+   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Investigate the codebase as needed using Read, Glob, and Grep.
 
@@ -89,13 +144,21 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
    - Mark unsupported claims as [HYPOTHESIS]
    ```
 
-2. Wait for all agents to complete
-3. Verify results:
-   - Check that at least 2 out of 3 agents produced valid output files
-   - If < 2 succeeded → ABORT: notify user and explain which agents failed
-   - If 2 succeeded → proceed but note in dossier that only 2 perspectives were available
+3. Wait for all agents to complete
+
+4. Validate artifacts:
+   ```
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
+   ```
+
+5. Check results:
+   - If < 2 succeeded → **ABORT**: notify user and explain which agents failed
+   - If 2 succeeded → proceed but note that only 2 perspectives were available
    - If 3 succeeded → proceed normally
-4. Announce: "Stage 1 complete. {N}/3 stances generated. Proceeding to cross-examination."
+
+6. Announce: "Stage 1 complete. {N}/3 stances generated. Proceeding to cross-examination."
 
 ---
 
@@ -104,37 +167,46 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Spawn ALL THREE agents simultaneously using parallel Agent tool calls:
+1. Read ALL THREE agent definition files (same as Stage 1)
 
-   For each agent, use this prompt structure:
+2. Spawn ALL THREE agents simultaneously (model: haiku).
+
+   For each agent, embed their role and add:
    ```
    You are executing Stage 2 (Cross-Examination) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
 
+   {FULL ROLE DEFINITION FROM AGENT FILE}
+
    Your identity: {agent-name}
 
-   Read the following Stage 1 stance files from the OTHER two critics:
-   - .claude/outputs/decisions/{decision_id}/stage1-{other-agent-1}.md
-   - .claude/outputs/decisions/{decision_id}/stage1-{other-agent-2}.md
+   You MUST attack the following two critics. Read their stances carefully:
+   - {other-agent-1}: .claude/outputs/decisions/{decision_id}/stage1-{other-agent-1}.md
+   - {other-agent-2}: .claude/outputs/decisions/{decision_id}/stage1-{other-agent-2}.md
+
+   Before attacking, QUOTE the specific claim you are targeting from their stance.
 
    You may also reference your own Stage 1 stance at:
    .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md
+
+   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your cross-examination to:
    .claude/outputs/decisions/{decision_id}/stage2-{agent-name}-cross-exam.md
 
    Follow the output schema in:
    .claude/skills/deliberate-consensus/templates/stage2-cross-exam.md
-
-   IMPORTANT:
-   - You MUST attack each of the other two critics on at least one point
-   - Attacks must be specific — "I disagree" is not an attack
-   - Reference concrete evidence where possible
    ```
 
-2. Wait for all agents to complete
-3. Announce: "Stage 2 complete. Cross-examinations generated. Proceeding to belief revision."
+3. Wait for all agents to complete
+
+4. Validate artifacts:
+   ```
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 2 {each cross-exam file}
+   ```
+
+5. Announce: "Stage 2 complete. Cross-examinations generated. Proceeding to belief revision."
 
 ---
 
@@ -143,13 +215,17 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 **Actor:** 3 critic agents in parallel
 
 **Steps:**
-1. Spawn ALL THREE agents simultaneously using parallel Agent tool calls:
+1. Read ALL THREE agent definition files (same as Stage 1)
 
-   For each agent, use this prompt structure:
+2. Spawn ALL THREE agents simultaneously (model: haiku).
+
+   For each agent, embed their role and add:
    ```
    You are executing Stage 3 (Belief Revision) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
+
+   {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Your identity: {agent-name}
 
@@ -159,6 +235,8 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 
    Also re-read your original Stage 1 stance:
    .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md
+
+   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your belief revision to:
    .claude/outputs/decisions/{decision_id}/stage3-{agent-name}-revision.md
@@ -173,42 +251,56 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
    - Do not introduce entirely new arguments — respond to the attacks
    ```
 
-2. Wait for all agents to complete
-3. Announce: "Stage 3 complete. Belief revisions generated. Proceeding to arbitration."
+3. Wait for all agents to complete
+
+4. Validate artifacts:
+   ```
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 3 {each revision file}
+   ```
+
+5. **Evidence Gap Check:**
+   - Read each revision's "Attacks Not Answered" section
+   - If critical evidence gaps exist AND max_rounds not reached → loop back to Stage 2
+   - If enough evidence OR max_rounds reached → proceed to Stage 4
+   - If critical evidence is entirely missing → **ABORT** with ruling = `investigate`
+
+6. Announce: "Stage 3 complete. Belief revisions generated. Proceeding to arbitration."
 
 ---
 
-## Stage 4 — Arbitration
+## Stage 4 — Arbitration & Dossier
 
 **Actor:** Arbiter agent (single spawn)
 
-**Steps:**
-1. Spawn the arbiter agent with this prompt:
+Stage 4 produces the **final output** of the deliberation. The Arbiter reads the revision artifacts (which contain summaries of the full deliberation arc) and the framing, then produces the ruling, minority report, and next actions in a single document.
 
+**Steps:**
+1. Read the arbiter agent definition: `.claude/agents/arbiter.md`
+
+2. Spawn the arbiter (model: haiku) with role embedded:
    ```
-   You are executing Stage 4 (Arbitration) of a deliberative consensus workflow.
+   You are executing Stage 4 (Arbitration & Dossier) of a deliberative consensus workflow.
 
    DECISION ID: {decision_id}
 
-   Read ALL of the following artifacts in order:
+   {FULL ROLE DEFINITION FROM AGENT FILE}
 
-   Framing:
+   Read the following artifacts:
+
+   Framing (required):
    .claude/outputs/decisions/{decision_id}/stage0-framing.md
 
-   Stage 1 — Initial Stances:
+   Stage 3 — Final Revised Positions (required — these contain summaries of the full debate arc):
+   .claude/outputs/decisions/{decision_id}/stage3-analytical-critic-revision.md
+   .claude/outputs/decisions/{decision_id}/stage3-risk-critic-revision.md
+   .claude/outputs/decisions/{decision_id}/stage3-pragmatic-critic-revision.md
+
+   Stage 1 — Original Stances (optional reference if you need more detail):
    .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
    .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
    .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
 
-   Stage 2 — Cross-Examinations:
-   .claude/outputs/decisions/{decision_id}/stage2-analytical-critic-cross-exam.md
-   .claude/outputs/decisions/{decision_id}/stage2-risk-critic-cross-exam.md
-   .claude/outputs/decisions/{decision_id}/stage2-pragmatic-critic-cross-exam.md
-
-   Stage 3 — Belief Revisions:
-   .claude/outputs/decisions/{decision_id}/stage3-analytical-critic-revision.md
-   .claude/outputs/decisions/{decision_id}/stage3-risk-critic-revision.md
-   .claude/outputs/decisions/{decision_id}/stage3-pragmatic-critic-revision.md
+   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your arbitration ruling to:
    .claude/outputs/decisions/{decision_id}/stage4-arbiter.md
@@ -222,32 +314,24 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
    - Evidence-poor claims receive reduced weight
    - Always produce a minority report
    - Always list unresolved questions
+   - Include concrete Next Actions for the user
    ```
 
-2. Wait for arbiter to complete
-3. Announce: "Stage 4 complete. Arbitration ruling generated. Assembling dossier."
+3. Wait for arbiter to complete
 
----
+4. Validate artifact:
+   ```
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 4 .claude/outputs/decisions/{decision_id}/stage4-arbiter.md
+   ```
 
-## Stage 5 — Decision Dossier
-
-**Actor:** You (Coordinator / main session)
-
-**Steps:**
-1. Read `stage4-arbiter.md` to get the ruling, minority report, and unresolved questions
-2. Read all `stage1-*.md` files to get initial confidence values and recommendations
-3. Read all `stage3-*.md` files to get revised confidence values and position changes
-4. Write `dossier.md` to `.claude/outputs/decisions/{decision_id}/dossier.md`
-   - Follow the schema in `templates/dossier.md`
-   - Include: artifact index, belief changes summary, final ruling reference, minority report, unresolved questions, next actions
-   - Do NOT rewrite any agent's content — reference and index only
-5. Present the dossier summary to the user:
+5. Read `stage4-arbiter.md` and present the summary to the user:
    - Ruling and consensus type
    - Key belief changes
    - Minority report highlights
    - Unresolved questions
-   - Suggested next actions
-6. Announce: "Deliberation complete. Full dossier at {path}."
+   - Next actions
+
+6. Announce: "Deliberation complete. Full ruling at {path}."
 
 ---
 
@@ -259,8 +343,7 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 | stage1-{agent}.md | That critic | Only that agent writes this |
 | stage2-{agent}-cross-exam.md | That critic | Only that agent writes this |
 | stage3-{agent}-revision.md | That critic | Only that agent writes this |
-| stage4-arbiter.md | Arbiter | Only the arbiter writes this |
-| dossier.md | Coordinator | Only you write this; index/reference only |
+| stage4-arbiter.md | Arbiter | Only the arbiter writes this (includes dossier content) |
 
 **Immutability:** Once any artifact is written, it must NOT be modified. Each file is a permanent record.
 
@@ -268,13 +351,15 @@ Schema references for each stage are in `.claude/skills/deliberate-consensus/tem
 
 - Every critical claim must cite at least one evidence reference (`file:line` or command output)
 - Claims without evidence must be marked as `[HYPOTHESIS]`
-- Cross-exam attacks must target specific assumptions, evidence gaps, or reasoning flaws
+- Cross-exam attacks must quote the specific claim being attacked, then target assumptions, evidence gaps, or reasoning flaws
 - The Arbiter gives reduced weight to evidence-poor claims
 - If critical evidence is missing, the ruling may degrade to `investigate`
 
 ## Stop Conditions
 
-- **Normal end:** 1 full cycle (Stage 1→2→3) + Arbiter ruling → dossier
-- **Abort:** Stage 1 produces < 2 valid stances → notify user
-- **Fallback:** Arbiter determines critical evidence is missing → ruling = `investigate`
-- **Max rounds:** MVP is fixed at 1 round (no looping back to Stage 2)
+Follow the state machine. Specifically:
+- **Normal end:** 1 full cycle (Stage 1→2→3) + Arbiter ruling → present to user
+- **Abort (insufficient agents):** Stage 1 produces < 2 valid stances → notify user
+- **Abort (insufficient evidence):** Evidence Gap Check finds critical gaps impossible to fill → ruling = `investigate`
+- **Loop:** Evidence Gap Check finds addressable gaps AND max_rounds not reached → return to Stage 2
+- **Max rounds:** Fixed at 1 for MVP (no looping back to Stage 2)

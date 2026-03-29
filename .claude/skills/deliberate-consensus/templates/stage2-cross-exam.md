@@ -10,7 +10,7 @@ stage: 2
 type: cross-exam
 agent: "{analytical-critic | risk-critic | pragmatic-critic}"
 decision_id: "{decision_id}"
-timestamp: "{ISO 8601}"
+timestamp: "{run scripts/timestamp.sh}"
 ---
 ```
 
@@ -19,6 +19,8 @@ timestamp: "{ISO 8601}"
 For EACH of the other two critics, include a section:
 
 ### Attack on {target-agent-name}
+
+Before writing your attack, you MUST quote the specific claim from their stance that you are attacking. Use a blockquote.
 
 #### Weakest Assumption
 Identify the most vulnerable assumption in their stance. Explain why it is weak — cite evidence or reasoning.
@@ -36,12 +38,15 @@ What cost or consequence did they fail to acknowledge?
 One of: `low` | `medium` | `high`
 
 Criteria:
-- `high`: Undermines their core thesis if true
-- `medium`: Weakens their argument but doesn't invalidate it
-- `low`: Minor issue, does not significantly affect their conclusion
+- `high`: If this weakness is confirmed, the opponent's **core thesis collapses** — their recommendation would need to change even if all other points are valid. This is a load-bearing flaw.
+- `medium`: This weakness **damages** the opponent's argument but they could patch it — their thesis survives in weakened form if they address this point.
+- `low`: A **peripheral issue** that does not affect the opponent's main conclusion. Noting it for completeness.
+
+Use `high` sparingly — only when you can demonstrate that the flaw, if confirmed, would force a different recommendation.
 
 ## Rules
 - You MUST attack each of the other two critics on at least one point
 - Attacks must be specific — "I disagree" is not an attack
+- Quote the specific claim you are attacking before explaining why it's wrong
 - Reference concrete evidence (file:line, command output) where possible
 - Mark evidence-free attacks as `[HYPOTHESIS]`

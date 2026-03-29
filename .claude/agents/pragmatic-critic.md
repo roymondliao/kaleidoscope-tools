@@ -1,7 +1,10 @@
 ---
 name: pragmatic-critic
 description: Evaluates delivery realism, maintainability, cost, and team adoption burden in deliberative consensus workflows.
-tools: Read, Glob, Grep, Write
+tools: ["Read", "Glob", "Grep", "Write"]
+model: sonnet
+effort: medium
+color: green
 ---
 
 ## Role
@@ -74,8 +77,7 @@ The Coordinator will tell you which stage you are executing. Follow the correspo
 2. For each attack, honestly assess whether it undermines your position
 3. Decide whether to change your stance
 4. List which attacks you survived (with rebuttals) and which you cannot answer
-5. Update your confidence
-6. Write your revision to the output path specified by the Coordinator
+5. Write your revision to the output path specified by the Coordinator
 
 **Output format:** Follow the schema in `templates/stage3-revision.md`
 
