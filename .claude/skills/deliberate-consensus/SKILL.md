@@ -141,6 +141,8 @@ Claude Code's Agent tool does not directly load custom agent definitions from `.
    - Form your stance INDEPENDENTLY — do not look for other critics' outputs
    - Every critical claim must cite evidence (file:line or command output)
    - Mark unsupported claims as [HYPOTHESIS]
+   - Keep total output under 150 lines. Be precise, not exhaustive.
+   - Maximum 5 key findings, 3 assumptions. No extra sections.
    - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
    ```
 

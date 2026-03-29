@@ -1,6 +1,7 @@
 # Stage 1 — Stance Generation Template
 
 > Written by: Each critic agent independently
+> **Length constraint: Keep total output under 150 lines.** Be precise, not exhaustive.
 
 ## Required Frontmatter
 
@@ -17,31 +18,31 @@ timestamp: "{run scripts/timestamp.sh}"
 ## Required Sections
 
 ### Thesis
-Your core argument in 2-3 sentences. State your position clearly.
+2-3 sentences. State your position and recommendation clearly. No background.
 
 ### Recommendation
 One of: `accept` | `reject` | `revise` | `investigate`
 
+### Key Findings
+Bulleted list, **maximum 5 items**. Each finding must:
+- State the claim in one sentence
+- Cite evidence: `file:line` or `file:line-range`
+- Mark unsupported claims as `[HYPOTHESIS]`
+
+Do NOT write paragraphs. One bullet = one finding + one evidence reference.
+
 ### Assumptions
-Bulleted list of assumptions your argument depends on. For each:
-- State the assumption
-- Note evidence supporting it (or mark as `[HYPOTHESIS]` if unsupported)
-
-### Evidence
-Bulleted list of concrete evidence references:
-- `file:line` or `file:line-range` for code references
-- Command output descriptions for runtime evidence
-- Each critical claim MUST have at least one evidence reference
-
-### Strongest Reasons
-Top 2-3 reasons supporting your recommendation.
+Bulleted list, **maximum 3 items**. Only list assumptions that, if wrong, would change your recommendation.
 
 ### Risk If Wrong
-What happens if your recommendation is followed but turns out to be wrong?
+2-3 sentences. What happens if your recommendation is followed but turns out to be wrong?
 
-### Argument Strength
-Describe the strength of your argument in prose. Explain:
-- Which parts of your argument are well-supported by evidence
-- Which parts are hypotheses that need further investigation
-- What is the weakest point in your own reasoning
-- How certain are you overall and why
+### Weakest Point
+1-2 sentences. What is the single weakest part of your own argument?
+
+## Rules
+
+- **Do NOT add sections not listed above.** No "Summary", no "Overall Assessment", no "Feasibility Analysis".
+- **Do NOT repeat information across sections.** Each fact appears once.
+- **Evidence goes in Key Findings only.** Other sections reference findings by number if needed.
+- **No percentages, no confidence scores.** Use words: "well-supported", "hypothesis", "uncertain".
