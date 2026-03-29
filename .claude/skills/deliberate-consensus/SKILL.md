@@ -69,29 +69,18 @@ You MUST follow this state machine. No skipping stages. No jumping to conclusion
 
 ## Sub Agents
 
-- Logical/technical analysis: `Agent("analytical-critic")`
-- Risk/failure analysis: `Agent("risk-critic")`
-- Practical/delivery analysis: `Agent("pragmatic-critic")`
-- Final ruling & dossier: `Agent("arbiter")`
-
+Defined in `config.json` under `agents`. Default:
+- Critics: `analytical-critic`, `risk-critic`, `pragmatic-critic`
+- Arbiter: `arbiter`
 
 ## How to Spawn Sub Agents
 
 Claude Code's Agent tool does not directly load custom agent definitions from `.claude/agents/`. You must:
 
-1. **Read** the agent definition file (e.g., `.claude/agents/analytical-critic.md`)
+1. **Read** the agent definition file (e.g., `.claude/agents/{agent-name}.md`)
 2. **Extract** the role description and stage behaviors from its content
 3. **Embed** the role instructions into the Agent tool's `prompt` parameter
-4. Use `model: "haiku"` for all sub agent spawns
-
-Example:
-```
-Agent(
-  description: "Analytical critic stance generation",
-  model: "haiku",
-  prompt: "{role instructions from agent file} + {stage-specific task}"
-)
-```
+4. Use `model: "{config.sub_agent_model}"` for all sub agent spawns
 
 ## Templates & Scripts
 
@@ -106,11 +95,11 @@ Agent(
 **Actor:** You (Coordinator / main session)
 
 **Steps:**
-1. Generate a `decision_id` in format `YYYYMMDD-HHMMSS-<short-slug>` (e.g., `20260329-143022-review-auth-middleware`)
-2. Create the output directory: `mkdir -p .claude/outputs/decisions/{decision_id}`
+1. Generate a `decision_id` in format `{config.decision_id_format}-<short-slug>` (e.g., `20260329-143022-review-auth-middleware`)
+2. Create the output directory: `mkdir -p {config.output_dir}/{decision_id}`
 3. Get timestamp: `bash ./scripts/timestamp.sh`
 4. Analyze the user's request and relevant codebase to formulate the problem
-5. Write `stage0-framing.md` to `.claude/outputs/decisions/{decision_id}/stage0-framing.md`
+5. Write `stage0-framing.md` to `{config.output_dir}/{decision_id}/stage0-framing.md`
    - Follow the schema in `templates/stage0-framing.md`
    - Include: problem statement, evaluation axes, evidence scope, context
 6. Announce to the user: "Stage 0 complete. Framing written to {path}. Proceeding to stance generation."
@@ -138,7 +127,7 @@ Agent(
    {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Read EXACTLY these files, in this order:
-   1. .claude/outputs/decisions/{decision_id}/stage0-framing.md
+   1. {config.output_dir}/{decision_id}/stage0-framing.md
    2. {primary document path from framing}
    3. {supporting document paths from framing, if any}
    4. .claude/skills/deliberate-consensus/templates/stage1-stance.md
@@ -146,7 +135,7 @@ Agent(
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your stance to:
-   .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md
+   {config.output_dir}/{decision_id}/stage1-{agent-name}.md
 
    IMPORTANT:
    - Form your stance INDEPENDENTLY — do not look for other critics' outputs
@@ -160,14 +149,14 @@ Agent(
 4. Validate artifacts:
 
    ```bash
-   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
-   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
-   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 {config.output_dir}/{decision_id}/stage1-analytical-critic.md
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 {config.output_dir}/{decision_id}/stage1-risk-critic.md
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 1 {config.output_dir}/{decision_id}/stage1-pragmatic-critic.md
    ```
 
-5. Check results:
-   - If < 2 succeeded → **ABORT**: notify user and explain which agents failed
-   - If 2 succeeded → proceed but note that only 2 perspectives were available
+5. Check results (threshold from `config.min_agents`):
+   - If < {config.min_agents} succeeded → **ABORT**: notify user and explain which agents failed
+   - If only {config.min_agents} succeeded → proceed but note limited perspectives
    - If 3 succeeded → proceed normally
 
 6. Announce: "Stage 1 complete. {N}/3 stances generated. Proceeding to cross-examination."
@@ -194,9 +183,9 @@ Agent(
    Your identity: {agent-name}
 
    Read EXACTLY these files:
-   1. .claude/outputs/decisions/{decision_id}/stage1-{other-agent-1}.md
-   2. .claude/outputs/decisions/{decision_id}/stage1-{other-agent-2}.md
-   3. .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md (your own stance, for reference)
+   1. {config.output_dir}/{decision_id}/stage1-{other-agent-1}.md
+   2. {config.output_dir}/{decision_id}/stage1-{other-agent-2}.md
+   3. {config.output_dir}/{decision_id}/stage1-{agent-name}.md (your own stance, for reference)
    4. .claude/skills/deliberate-consensus/templates/stage2-cross-exam.md
 
    You MUST attack both {other-agent-1} and {other-agent-2}.
@@ -205,7 +194,7 @@ Agent(
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your cross-examination to:
-   .claude/outputs/decisions/{decision_id}/stage2-{agent-name}-cross-exam.md
+   {config.output_dir}/{decision_id}/stage2-{agent-name}-cross-exam.md
 
    Do NOT search for or read any files beyond those listed above.
    ```
@@ -241,15 +230,15 @@ Agent(
    Your identity: {agent-name}
 
    Read EXACTLY these files:
-   1. .claude/outputs/decisions/{decision_id}/stage2-{other-agent-1}-cross-exam.md (attacks on you)
-   2. .claude/outputs/decisions/{decision_id}/stage2-{other-agent-2}-cross-exam.md (attacks on you)
-   3. .claude/outputs/decisions/{decision_id}/stage1-{agent-name}.md (your original stance)
+   1. {config.output_dir}/{decision_id}/stage2-{other-agent-1}-cross-exam.md (attacks on you)
+   2. {config.output_dir}/{decision_id}/stage2-{other-agent-2}-cross-exam.md (attacks on you)
+   3. {config.output_dir}/{decision_id}/stage1-{agent-name}.md (your original stance)
    4. .claude/skills/deliberate-consensus/templates/stage3-revision.md
 
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your belief revision to:
-   .claude/outputs/decisions/{decision_id}/stage3-{agent-name}-revision.md
+   {config.output_dir}/{decision_id}/stage3-{agent-name}-revision.md
 
    IMPORTANT:
    - Be intellectually honest — if an attack is valid, acknowledge it
@@ -294,16 +283,16 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    {FULL ROLE DEFINITION FROM AGENT FILE}
 
    Read EXACTLY these files, in this order:
-   1. .claude/outputs/decisions/{decision_id}/stage0-framing.md
-   2. .claude/outputs/decisions/{decision_id}/stage3-analytical-critic-revision.md
-   3. .claude/outputs/decisions/{decision_id}/stage3-risk-critic-revision.md
-   4. .claude/outputs/decisions/{decision_id}/stage3-pragmatic-critic-revision.md
+   1. {config.output_dir}/{decision_id}/stage0-framing.md
+   2. {config.output_dir}/{decision_id}/stage3-analytical-critic-revision.md
+   3. {config.output_dir}/{decision_id}/stage3-risk-critic-revision.md
+   4. {config.output_dir}/{decision_id}/stage3-pragmatic-critic-revision.md
    5. .claude/skills/deliberate-consensus/templates/stage4-arbitration.md
 
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your arbitration ruling to:
-   .claude/outputs/decisions/{decision_id}/stage4-arbiter.md
+   {config.output_dir}/{decision_id}/stage4-arbiter.md
 
    IMPORTANT:
    - Do NOT introduce new arguments not raised by the critics
@@ -319,7 +308,7 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
 
 4. Validate artifact:
    ```
-   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 4 .claude/outputs/decisions/{decision_id}/stage4-arbiter.md
+   bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh 4 {config.output_dir}/{decision_id}/stage4-arbiter.md
    ```
 
 5. Read `stage4-arbiter.md` and present the summary to the user:
@@ -357,7 +346,7 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
 
 Follow the state machine. Specifically:
 - **Normal end:** 1 full cycle (Stage 1→2→3) + Arbiter ruling → present to user
-- **Abort (insufficient agents):** Stage 1 produces < 2 valid stances → notify user
+- **Abort (insufficient agents):** Stage 1 produces < {config.min_agents} valid stances → notify user
 - **Abort (insufficient evidence):** Evidence Gap Check finds critical gaps impossible to fill → ruling = `investigate`
 - **Loop:** Evidence Gap Check finds addressable gaps AND max_rounds not reached → return to Stage 2
-- **Max rounds:** Fixed at 1 for MVP (no looping back to Stage 2)
+- **Max rounds:** `{config.max_rounds}` (default: 1, no looping back to Stage 2)

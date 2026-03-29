@@ -1,0 +1,16 @@
+{
+  "language": "zh",
+  "output_dir": "output/decisions",
+  "max_rounds": 1,
+  "min_agents": 2,
+  "decision_id_format": "YYYYMMDD-HHMMSS",
+  "sub_agent_model": "haiku",
+  "agents": {
+    "critics": [
+      "analytical-critic",
+      "risk-critic",
+      "pragmatic-critic"
+    ],
+    "arbiter": "arbiter"
+  }
+}
