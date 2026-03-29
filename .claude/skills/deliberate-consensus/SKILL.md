@@ -300,11 +300,6 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    4. .claude/outputs/decisions/{decision_id}/stage3-pragmatic-critic-revision.md
    5. .claude/skills/deliberate-consensus/templates/stage4-arbitration.md
 
-   If you need more detail on a critic's original position, you may OPTIONALLY read:
-   - .claude/outputs/decisions/{decision_id}/stage1-analytical-critic.md
-   - .claude/outputs/decisions/{decision_id}/stage1-risk-critic.md
-   - .claude/outputs/decisions/{decision_id}/stage1-pragmatic-critic.md
-
    Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
 
    Write your arbitration ruling to:
