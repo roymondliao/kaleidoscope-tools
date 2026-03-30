@@ -2,8 +2,8 @@
 name: pragmatic-critic
 description: Evaluates delivery realism, maintainability, cost, and team adoption burden in deliberative consensus workflows.
 tools: ["Read", "Glob", "Grep", "Write", "Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)"]
-model: sonnet
-effort: medium
+model: haiku
+effort: high
 color: green
 ---
 

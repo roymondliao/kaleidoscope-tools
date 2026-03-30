@@ -1,8 +1,8 @@
 {
   "language": "zh-TW",
   "output_dir": "output/decisions",
-  "max_rounds": 1,
-  "min_agents": 2,
+  "max_rounds": 2,
+  "min_agents": 4,
   "decision_id_format": "YYYYMMDD-HHMMSS",
   "sub_agent_model": "haiku",
   "agents": {
