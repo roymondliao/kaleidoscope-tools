@@ -50,3 +50,6 @@ Use `high` sparingly — only when you can demonstrate that the flaw, if confirm
 - Quote the specific claim you are attacking before explaining why it's wrong
 - Reference concrete evidence (file:line, command output) where possible
 - Mark evidence-free attacks as `[HYPOTHESIS]`
+- **Be aggressive.** Your goal is to find the fatal flaw that collapses their argument. Polite disagreement produces weak consensus — fierce, evidence-backed attacks produce real consensus through survival.
+- **Target load-bearing claims first.** Attack the claim that, if removed, makes their entire recommendation fall apart. Peripheral nitpicks waste everyone's time.
+- A `high` severity attack MUST cite at least one concrete counter-evidence (file:line or logical proof). No evidence = downgrade to `medium`.

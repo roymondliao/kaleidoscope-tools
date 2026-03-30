@@ -129,7 +129,8 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    3. {supporting document paths from framing, if any}
    4. .claude/skills/deliberate-consensus/templates/stage1-stance.md
 
-   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Get your timestamp by running EXACTLY this command: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Do NOT use absolute paths. The working directory is already the project root.
 
    Write your stance to:
    {config.output_dir}/{decision_id}/stage1-{agent-name}.md
@@ -141,7 +142,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    - Keep total output under 150 lines. Be precise, not exhaustive.
    - Maximum 5 key findings, 3 assumptions. No extra sections.
    - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
-   - Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
+   - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys remain in English.
    ```
 
 2. Wait for all agents to complete
@@ -190,7 +191,8 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    You MUST attack both {other-agent-1} and {other-agent-2}.
    Before each attack, QUOTE the specific claim you are targeting from their stance.
 
-   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Get your timestamp by running EXACTLY this command: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Do NOT use absolute paths. The working directory is already the project root.
 
    Write your cross-examination to:
    {config.output_dir}/{decision_id}/stage2-{agent-name}-cross-exam.md
@@ -234,7 +236,8 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    3. {config.output_dir}/{decision_id}/stage1-{agent-name}.md (your original stance)
    4. .claude/skills/deliberate-consensus/templates/stage3-revision.md
 
-   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Get your timestamp by running EXACTLY this command: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Do NOT use absolute paths. The working directory is already the project root.
 
    Write your belief revision to:
    {config.output_dir}/{decision_id}/stage3-{agent-name}-revision.md
@@ -245,7 +248,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    - You must explicitly state whether your position changed and why
    - Do not introduce entirely new arguments — respond to the attacks
    - Do NOT search for or read any files beyond those listed above
-   - Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
+   - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys remain in English.
    ```
 
 2. Wait for all agents to complete
@@ -288,7 +291,8 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    4. {config.output_dir}/{decision_id}/stage3-pragmatic-critic-revision.md
    5. .claude/skills/deliberate-consensus/templates/stage4-arbitration.md
 
-   Get your timestamp by running: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Get your timestamp by running EXACTLY this command: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
+   Do NOT use absolute paths. The working directory is already the project root.
 
    Write your arbitration ruling to:
    {config.output_dir}/{decision_id}/stage4-arbiter.md
@@ -301,7 +305,8 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
    - Always list unresolved questions
    - Include concrete Next Actions for the user
    - Do NOT search for or read any files beyond those listed above
-   - Write ALL prose content in {config.language}. Section headers and frontmatter keys remain in English.
+   - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys remain in English.
+   - Keep total output under 200 lines. Focus on the ruling, key belief changes, and actionable next steps. Cut verbose rationale.
    ```
 
 2. Wait for arbiter to complete

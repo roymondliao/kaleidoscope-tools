@@ -10,8 +10,11 @@
       "TaskUpdate",
       "WebFetch",
       "WebSearch",
+      "Bash(mkdir -p:*)",
       "Bash(git:*)",
-      "Bash(rm .git/index)"
+      "Bash(rm .git/index)",
+      "Bash(bash .claude/skills/deliberate-consensus/scripts/timestamp.sh)",
+      "Bash(bash .claude/skills/deliberate-consensus/scripts/validate-artifact.sh *)"
     ],
     "deny": [
       "Read(./.env)",

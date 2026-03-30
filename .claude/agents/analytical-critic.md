@@ -4,7 +4,7 @@ description: Evaluates technical correctness, logical consistency, assumption va
 tools: ["Read", "Glob", "Grep", "Write", "Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)"]
 model: sonnet
 effort: medium
-color: white
+color: cyan
 ---
 
 
