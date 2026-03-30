@@ -12,8 +12,11 @@ type: stance
 agent: "{analytical-critic | risk-critic | pragmatic-critic}"
 decision_id: "{decision_id}"
 timestamp: "{run scripts/timestamp.sh}"
+recommendation: "{accept | reject | revise | investigate}"
 ---
 ```
+
+**IMPORTANT:** The `recommendation` field MUST be one of exactly four values: `accept`, `reject`, `revise`, or `investigate`. No other values (e.g., "block", "conditional-accept", "revise-with-conditions") are permitted. Use `reject` for blocking, and explain conditions in the body text.
 
 ## Required Sections
 

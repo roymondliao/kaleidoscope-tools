@@ -11,8 +11,15 @@ type: cross-exam
 agent: "{analytical-critic | risk-critic | pragmatic-critic}"
 decision_id: "{decision_id}"
 timestamp: "{run scripts/timestamp.sh}"
+attacks:
+  - target: "{other-agent-1}"
+    severity: "{low | medium | high}"
+  - target: "{other-agent-2}"
+    severity: "{low | medium | high}"
 ---
 ```
+
+**IMPORTANT:** The `severity` field in frontmatter MUST be one of exactly three values: `low`, `medium`, or `high`. At least one attack MUST be `high`. The frontmatter is the authoritative source for severity — the body text elaborates the reasoning.
 
 ## Required Sections
 

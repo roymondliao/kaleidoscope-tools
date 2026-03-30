@@ -149,7 +149,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
      4. If your recommendation feels comfortable and safe — stop. Something is wrong. `revise` is often the comfortable middle ground that challenges nothing.
      5. Do NOT describe what you want. Describe the boundaries of what you reject. Let your recommendation emerge from what survives elimination.
      Consider the FULL range: accept, reject, revise, investigate. Commit to the one your evidence best supports AFTER elimination, not the one that feels safest.
-   - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
+   - STRICT FILE SCOPE: Read ONLY the files listed above. Do NOT use Glob, Grep, or any search tools. Do NOT read any other files in the repository. Your evidence must come exclusively from the documents provided. If you cannot verify a claim from the provided files, mark it as [HYPOTHESIS].
    - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys MUST remain in English (e.g. "## Thesis", "## Key Findings", "## Assumptions"). Do NOT translate section headers.
    ```
 
@@ -208,7 +208,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    {config.output_dir}/{decision_id}/stage2-{agent-name}-cross-exam.md
 
    Keep total output under 120 lines. Focus on attacks, not synthesis. Do NOT include a Summary section — synthesis is the Arbiter's job, not yours.
-   Do NOT search for or read any files beyond those listed above.
+   STRICT FILE SCOPE: Read ONLY the files listed above. Do NOT use Glob, Grep, or any search tools. Do NOT read any other files.
    Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys MUST remain in English. Do NOT translate section headers.
    ```
 
@@ -259,7 +259,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    - You must explicitly state whether your position changed and why
    - Do not introduce entirely new arguments — respond to the attacks
    - Target 80–100 lines. Use the full range — thorough rebuttals with quoted evidence are more valuable than terse dismissals. Do not over-compress.
-   - Do NOT search for or read any files beyond those listed above
+   - STRICT FILE SCOPE: Read ONLY the files listed above. Do NOT use Glob, Grep, or any search tools. Do NOT read any other files.
    - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys MUST remain in English. Do NOT translate section headers.
    ```
 

@@ -17,6 +17,8 @@ current_position: "{accept | reject | revise | investigate}"
 ---
 ```
 
+**IMPORTANT:** `prior_position` and `current_position` MUST be one of exactly four values: `accept`, `reject`, `revise`, or `investigate`. No other values are permitted. If you want to block/reject with conditions, use `reject` and explain conditions in body text. The frontmatter is the authoritative source for positions.
+
 ## Required Sections
 
 ### Prior Position
