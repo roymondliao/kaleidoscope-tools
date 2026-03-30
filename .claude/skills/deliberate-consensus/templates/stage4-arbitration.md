@@ -50,9 +50,9 @@ Bulleted list of questions that the deliberation could not resolve. These should
 
 ### Consensus Type
 One of:
-- `strong` — Multiple agents converged after adversarial testing; high-severity attacks mostly answered
-- `weak` — Clear majority position exists, but significant minority reservations remain
-- `provisional` — Insufficient evidence or unmet conditions; temporary ruling only
+- `strong` — Agents converged on the same recommendation AND the same core reasoning after adversarial testing. High-severity attacks were mostly answered with evidence.
+- `weak` — Agents converged on the same recommendation but with divergent reasoning bases (different "why"), OR significant evidence gaps remain unresolved, OR no genuine minority position emerged to stress-test the consensus.
+- `provisional` — Insufficient evidence across all critics, no genuine convergence on reasoning, or ruling depends on unverified assumptions that could flip the outcome.
 
 Explain WHY this consensus type was assigned.
 

@@ -11,6 +11,9 @@ type: belief-revision
 agent: "{analytical-critic | risk-critic | pragmatic-critic}"
 decision_id: "{decision_id}"
 timestamp: "{run scripts/timestamp.sh}"
+position_changed: "{yes | no}"
+prior_position: "{accept | reject | revise | investigate}"
+current_position: "{accept | reject | revise | investigate}"
 ---
 ```
 

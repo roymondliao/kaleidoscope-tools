@@ -34,6 +34,20 @@ case "$STAGE" in
     if [ "$ATTACK_COUNT" -lt 2 ]; then
       MISSING+=("Attack on (need at least 2, found $ATTACK_COUNT)")
     fi
+    # Check that blockquotes exist (at least 2, one per attack target)
+    QUOTE_COUNT=$(grep -c "^>" "$FILE")
+    if [ "$QUOTE_COUNT" -lt 2 ]; then
+      MISSING+=("Blockquote citations (need at least 2, found $QUOTE_COUNT)")
+    fi
+    # Check that severity fields exist (header or inline format)
+    SEVERITY_COUNT=$(grep -c -i "^#### Severity\|^### Severity\|\*\*Severity:" "$FILE")
+    if [ "$SEVERITY_COUNT" -lt 2 ]; then
+      MISSING+=("Severity ratings (need at least 2, found $SEVERITY_COUNT)")
+    fi
+    # Check that at least one high severity attack exists
+    if ! grep -qi "high" "$FILE"; then
+      echo "WARNING: No high-severity attack found in $FILE (expected at least one)" >&2
+    fi
     ;;
   3)
     check_section "Prior Position"

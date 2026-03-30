@@ -8,6 +8,7 @@ allowed-tools:
 - Write
 - Bash(.claude/skills/deliberate-consensus/scripts/timestamp.sh)
 - Bash(.claude/skills/deliberate-consensus/scripts/validate-artifact.sh *)
+- Bash(mkdir -p output/decisions/*)
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -54,9 +55,9 @@ digraph DeliberativeConsensusWorkflow {
 
   BELIEF_REVISION -> EVIDENCE_GAP_CHECK [label="revisions submitted"];
 
-  EVIDENCE_GAP_CHECK -> CROSS_EXAM [label="new evidence requested\nand max_rounds not reached"];
-  EVIDENCE_GAP_CHECK -> ARBITRATION [label="enough evidence OR max_rounds reached"];
-  EVIDENCE_GAP_CHECK -> ABORT_INSUFFICIENT_EVIDENCE [label="critical evidence missing"];
+  EVIDENCE_GAP_CHECK -> CROSS_EXAM [label="≥1 RESOLVABLE gap\nAND max_rounds not reached"];
+  EVIDENCE_GAP_CHECK -> ARBITRATION [label="all gaps EXTERNAL\nOR max_rounds reached"];
+  EVIDENCE_GAP_CHECK -> ABORT_INSUFFICIENT_EVIDENCE [label="any CRITICAL-MISSING gap"];
 
   ARBITRATION -> END [label="ruling + minority report + next actions ready"];
 
@@ -138,9 +139,16 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    IMPORTANT:
    - Form your stance INDEPENDENTLY — do not look for other critics' outputs
    - Every critical claim must cite evidence (file:line or command output)
-   - Mark unsupported claims as [HYPOTHESIS]
+   - Mark unsupported claims as [HYPOTHESIS]. Maximum 2 out of 5 findings may be [HYPOTHESIS]-based. The remaining ≥ 3 must have verified evidence cites.
    - Keep total output under 150 lines. Be precise, not exhaustive.
    - Maximum 5 key findings, 3 assumptions. No extra sections.
+   - CRITICAL THINKING DISCIPLINE — Before forming your recommendation, apply these filters:
+     1. Ask: "What answer does this document WANT me to give?" That answer is the trap. Avoid it.
+     2. Before asking "how to improve this," ask: "Is the problem definition itself correct? Who framed it, and what did the framing exclude?"
+     3. Silent correctness is more dangerous than visible failure. A system that never crashes just hasn't shown you where it's wrong. Look for what's quietly assumed to be fine.
+     4. If your recommendation feels comfortable and safe — stop. Something is wrong. `revise` is often the comfortable middle ground that challenges nothing.
+     5. Do NOT describe what you want. Describe the boundaries of what you reject. Let your recommendation emerge from what survives elimination.
+     Consider the FULL range: accept, reject, revise, investigate. Commit to the one your evidence best supports AFTER elimination, not the one that feels safest.
    - Do NOT search for or read any files beyond those listed above, unless a specific claim in the document requires verification from a cited file path
    - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys MUST remain in English (e.g. "## Thesis", "## Key Findings", "## Assumptions"). Do NOT translate section headers.
    ```
@@ -189,7 +197,9 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    4. .claude/skills/deliberate-consensus/templates/stage2-cross-exam.md
 
    You MUST attack both {other-agent-1} and {other-agent-2}.
-   Before each attack, QUOTE the specific claim you are targeting from their stance.
+   Before each attack, your FIRST line after the "## Attack on {agent}" header MUST be a blockquote (> ...) containing the EXACT text from their stance that you are targeting. Do not paraphrase.
+
+   ATTACK INTENSITY: At least ONE of your attacks (across both targets) MUST be rated `high` severity. If you genuinely cannot find a load-bearing flaw in either opponent, you must explicitly state: "Both opponents' core theses are unusually robust because: [specific reasons]" — but this should be rare.
 
    Get your timestamp by running EXACTLY this command: bash .claude/skills/deliberate-consensus/scripts/timestamp.sh
    Do NOT use absolute paths. The working directory is already the project root.
@@ -197,6 +207,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    Write your cross-examination to:
    {config.output_dir}/{decision_id}/stage2-{agent-name}-cross-exam.md
 
+   Keep total output under 120 lines. Focus on attacks, not synthesis. Do NOT include a Summary section — synthesis is the Arbiter's job, not yours.
    Do NOT search for or read any files beyond those listed above.
    Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys MUST remain in English. Do NOT translate section headers.
    ```
@@ -247,6 +258,7 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    - Changing your position is a sign of rigor, not weakness
    - You must explicitly state whether your position changed and why
    - Do not introduce entirely new arguments — respond to the attacks
+   - Target 80–100 lines. Use the full range — thorough rebuttals with quoted evidence are more valuable than terse dismissals. Do not over-compress.
    - Do NOT search for or read any files beyond those listed above
    - Write ALL output (artifact AND summary back to coordinator) in {config.language}. Section headers and frontmatter keys MUST remain in English. Do NOT translate section headers.
    ```
@@ -259,10 +271,16 @@ The system automatically injects the agent's role definition. Do NOT read or emb
    ```
 
 4. **Evidence Gap Check:**
-   - Read each revision's "Attacks Not Answered" section
-   - If critical evidence gaps exist AND max_rounds not reached → loop back to Stage 2
-   - If enough evidence OR max_rounds reached → proceed to Stage 4
-   - If critical evidence is entirely missing → **ABORT** with ruling = `investigate`
+   Read each revision's "Attacks Not Answered" section. Classify each gap:
+
+   - **RESOLVABLE** — Gap can be addressed by re-reading the primary document, running grep/glob on cited files, or further debate between critics. Examples: "Critic A claims file X doesn't handle edge case Y, but Critic B says it does"; "Two critics disagree on interpretation of section Z."
+   - **EXTERNAL** — Gap requires code inspection, team interviews, production data, or access to systems outside the deliberation scope. Examples: "Need to verify actual implementation code"; "Requires confirmation from engineering lead."
+   - **CRITICAL-MISSING** — Gap is so fundamental that no ruling can be trusted without this evidence. Examples: "The primary document referenced doesn't exist"; "All critics' arguments depend on an unverified assumption about system behavior."
+
+   Decision rules:
+   - Loop back to Stage 2 ONLY if ≥ 1 gap is **RESOLVABLE** AND `max_rounds` not reached
+   - Proceed to Stage 4 if all gaps are **EXTERNAL** OR `max_rounds` reached
+   - **ABORT** with ruling = `investigate` if any gap is **CRITICAL-MISSING**
 
 5. Announce: "Stage 3 complete. Belief revisions generated. Proceeding to arbitration."
 
@@ -352,6 +370,6 @@ Stage 4 produces the **final output** of the deliberation. The Arbiter reads the
 Follow the state machine. Specifically:
 - **Normal end:** 1 full cycle (Stage 1→2→3) + Arbiter ruling → present to user
 - **Abort (insufficient agents):** Stage 1 produces < {config.min_agents} valid stances → notify user
-- **Abort (insufficient evidence):** Evidence Gap Check finds critical gaps impossible to fill → ruling = `investigate`
-- **Loop:** Evidence Gap Check finds addressable gaps AND max_rounds not reached → return to Stage 2
+- **Abort (insufficient evidence):** Evidence Gap Check finds any CRITICAL-MISSING gap → ruling = `investigate`
+- **Loop:** Evidence Gap Check finds ≥ 1 RESOLVABLE gap AND max_rounds not reached → return to Stage 2
 - **Max rounds:** `{config.max_rounds}` (default: 1, no looping back to Stage 2)
