@@ -1,9 +1,9 @@
 ---
-name: "level-analysis: perspecitve"
-description: Analyze problems/features/concepts from different engineering seniority levels (Senior/Staff/Principal)
+name: level-analysis
+description: Analyze problems/features/concepts from different engineering seniority levels (Senior/Staff/Principal) with multi-perspective analysis
 argument-hint: <your question or topic to analyze>
 category: workflow
-tags: [level-analysis, perspecitve]
+tags: [level-analysis, perspective]
 ---
 # Multi-Level Engineering Perspective Analysis
 
