@@ -25,6 +25,18 @@
       "keywords": ["development", "tools", "kaleidoscope"],
       "tags": ["agents", "skills", "hooks"],
       "strict": false
+    },
+    {
+      "name": "samsara",
+      "description": "向死而驗 — Death-first development workflow. Existential accountability for every line of code.",
+      "source": "./samsara",
+      "category": "development",
+      "author": {
+        "name": "Roymond Liao"
+      },
+      "keywords": ["workflow", "harness", "death-first", "samsara"],
+      "tags": ["skills", "agents", "hooks"],
+      "strict": false
     }
   ]
 }
