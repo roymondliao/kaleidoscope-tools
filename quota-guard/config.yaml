@@ -1,0 +1,8 @@
+# quota-guard default configuration
+# Override via environment variables:
+#   QUOTA_GUARD_THRESHOLD — remaining % to trigger handoff (default: 8)
+#   QUOTA_GUARD_USER_STATUSLINE — path to user's original statusLine script
+
+threshold: 8
+quota_state_dir: "~/.claude/runtime/quota"
+handoff_output_dir: "docs/handoff"

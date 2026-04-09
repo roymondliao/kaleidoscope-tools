@@ -1,0 +1,8 @@
+{
+  "name": "quota-guard",
+  "description": "Quota monitoring & cross-tool handoff — monitors Claude Code Pro rate limits via statusLine, auto-pauses on low quota, and generates structured YAML handoff documents for seamless continuation in Codex or Gemini CLI.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Roymond Liao"
+  }
+}
