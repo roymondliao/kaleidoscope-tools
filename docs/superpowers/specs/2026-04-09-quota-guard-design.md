@@ -112,14 +112,25 @@ read quota file
 min_remaining >= threshold?
   → pass through
 
-min_remaining < threshold + handoff marker exists for this session_id?
-  → pass through (handoff already completed)
+min_remaining < threshold + current-window handoff exists?
+  → pass through (handoff already completed in this quota window)
 
-min_remaining < threshold + no marker?
+min_remaining < threshold + no current-window handoff?
   → return {"decision": "block", "reason": "...execute /quota-guard:handoff..."}
 ```
 
-**Marker detection**: `grep -rl "session_id: {current_session_id}" docs/handoff/*-handoff.yaml`. The handoff YAML itself is the marker — no separate file needed.
+**Guard mechanism (timestamp-based)**:
+
+The handoff filename contains a timestamp (e.g., `2026-04-09-143000-handoff.yaml`). The quota file contains `five_hour_resets_at` (future reset time). The current 5-hour window started at approximately `resets_at - 5h`.
+
+Guard logic:
+1. Find handoff files matching current `session_id` in `docs/handoff/`
+2. Extract the timestamp from the most recent matching filename
+3. Compare against the current quota window start time (`resets_at - 5h`)
+4. If handoff timestamp >= window start → handoff is current → pass through
+5. If handoff timestamp < window start → handoff is from a previous window → trigger new handoff
+
+This eliminates the need for ephemeral marker files. The handoff YAML's own timestamp is sufficient to determine whether it belongs to the current quota window.
 
 **Threshold**: Default `8` (percent remaining). Configurable via `QUOTA_GUARD_THRESHOLD` environment variable.
 
@@ -202,14 +213,21 @@ Writes a minimal emergency handoff:
 
 This is the last resort. If threshold is set conservatively (8%), this should rarely trigger.
 
-## Guard mechanism (anti-loop)
+## Guard mechanism (timestamp-based anti-loop)
 
-When Stop hook blocks and Claude executes the handoff skill, the flow is:
-1. Claude generates handoff response → Stop hook fires again
-2. Hook reads quota (still low) → checks for marker
-3. Finds `docs/handoff/*-handoff.yaml` with matching `session_id` → **pass through**
+Uses the handoff file's timestamp to determine if it belongs to the current quota window. No ephemeral marker files needed.
+
+**Anti-loop (same response cycle):**
+1. Claude generates handoff response → writes `docs/handoff/2026-04-09-173000-handoff.yaml`
+2. Stop hook fires again → quota still low
+3. Finds handoff with timestamp 17:30, current window started at ~15:00 → 17:30 >= 15:00 → **pass through**
 4. Claude's handoff response reaches the user
-5. Session can end gracefully
+
+**Cross-window (quota refreshed, same session):**
+1. Old handoff exists from 14:30, quota refreshed at 15:00
+2. User continues working, quota drops again at 17:30
+3. Stop hook: current window started at ~15:00, handoff timestamp 14:30 < 15:00 → **stale, trigger new handoff**
+4. New handoff correctly captures updated task state
 
 ## Configuration
 
