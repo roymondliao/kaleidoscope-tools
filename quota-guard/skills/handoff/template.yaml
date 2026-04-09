@@ -1,0 +1,43 @@
+handoff:
+  version: "1.0"
+  created_at: ""                # ISO 8601
+  source_agent: ""              # "claude-code" | "codex" | "gemini-cli"
+  session_id: ""
+  trigger: ""                   # "quota_low" | "manual" | "emergency"
+
+quota:
+  five_hour_remaining_pct: null
+  seven_day_remaining_pct: null
+  earliest_reset_at: null       # ISO 8601 of nearest reset
+
+project:
+  cwd: ""
+  branch: ""
+  description: ""               # one-line project summary
+
+workflow:
+  name: ""                      # e.g., "samsara:implement", "superpowers:brainstorming"
+  phase: ""                     # current phase/step in the workflow
+  plan_file: ""                 # relative path to plan doc
+  spec_file: ""                 # relative path to spec doc
+
+tasks:
+  summary: ""                   # high-level what we're doing
+  completed:
+    - ""
+  in_progress:
+    - ""
+  remaining:
+    - ""
+
+context:
+  key_decisions: []             # important decisions made this session
+  blockers: []                  # known issues or blockers
+  assumptions: []               # things next agent should validate
+
+files:
+  code_map: ""                  # relative path to codebase map
+  recently_modified: []         # files touched this session
+  relevant_docs: []             # paths to relevant documentation
+
+notes: ""                       # free-form context Claude deems important
