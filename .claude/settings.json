@@ -34,19 +34,6 @@
       "Bash(takeown:*)"
     ]
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/context-sentinel-session-start.sh"
-          }
-        ]
-      }
-    ]
-  },
   "enableAllProjectMcpServers": true,
   "enabledPlugins": {
     "claude-mem@thedotmack": false,
