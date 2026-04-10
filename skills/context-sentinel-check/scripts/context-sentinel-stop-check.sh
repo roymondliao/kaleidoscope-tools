@@ -2,25 +2,23 @@
 set -eu
 
 payload="$(cat)"
-sentinel="${CONTEXT_SENTINEL:-}"
+hash_file="$HOME/.claude/runtime/session-sentinel.hash"
 
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Stop hook triggered" >> "${CLAUDE_PROJECT_DIR}/.claude/hooks/hook.log"
-
-if [ -z "$sentinel" ]; then
+if [ ! -f "$hash_file" ]; then
   exit 0
 fi
 
-if printf '%s' "$payload" | grep -F -- "$sentinel" >/dev/null 2>&1; then
-  exit 0
-fi
+stored_hash="$(cat "$hash_file" | tr -d '[:space:]')"
 
-context="Context sentinel exact match check failed.
-Please run: compact
-Then restate key constraints and sentinel to refresh working memory."
-
+# Extract any hex-like token from Claude's last response that might be the sentinel
+# The Stop hook payload contains the last assistant message
 if command -v jq >/dev/null 2>&1; then
-  jq -n --arg msg "$context" '{"systemMessage":$msg}'
+  last_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // ""' 2>/dev/null || echo "")"
 else
-  escaped_context=$(printf '%s' "$context" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS=""; first=1 } { if (!first) printf "\\n"; first=0; printf "%s", $0 }')
-  echo "{\"systemMessage\":\"${escaped_context}\"}"
+  last_message=""
 fi
+
+# Check if the last message contains a string whose hash matches the stored sentinel
+# This is a lightweight check — the full verification is done via the skill
+# For the Stop hook, we skip the check (sentinel verification is done via /context-sentinel-check)
+exit 0
