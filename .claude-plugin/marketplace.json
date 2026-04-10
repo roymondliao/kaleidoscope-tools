@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "kaleidoscope-tools",
   "metadata": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Collection of cool development tools which include skills, agents, and hooks"
   },
   "owner": {
@@ -36,6 +36,18 @@
       },
       "keywords": ["workflow", "harness", "death-first", "samsara"],
       "tags": ["skills", "agents", "hooks"],
+      "strict": false
+    },
+    {
+      "name": "quota-guard",
+      "description": "Quota monitoring & cross-tool handoff — monitors Claude Code Pro rate limits via statusLine, auto-pauses on low quota, and generates structured YAML handoff documents for seamless continuation in Codex or Gemini CLI.",
+      "source": "./quota-guard",
+      "category": "development",
+      "author": {
+        "name": "Roymond Liao"
+      },
+      "keywords": ["quota", "handoff", "monitoring", "rate-limit"],
+      "tags": ["skills", "hooks"],
       "strict": false
     }
   ]
