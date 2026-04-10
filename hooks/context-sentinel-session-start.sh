@@ -5,8 +5,10 @@ payload="$(cat)"
 
 if command -v jq >/dev/null 2>&1; then
   source="$(printf '%s' "$payload" | jq -r '.source // "startup"' 2>/dev/null || printf '%s' 'startup')"
+  session_id="$(printf '%s' "$payload" | jq -r '.session_id // "unknown"' 2>/dev/null || printf '%s' 'unknown')"
 else
   source="startup"
+  session_id="unknown"
 fi
 
 # Auto-generate random sentinel per session (no env var needed)
@@ -14,9 +16,12 @@ sentinel="$(openssl rand -hex 8)"
 
 # Store hash (not plaintext) so Claude can't cheat by reading the file
 hash="$(printf '%s' "$sentinel" | shasum -a 256 | cut -d' ' -f1)"
-runtime_dir="$HOME/.claude/runtime"
-mkdir -p "$runtime_dir"
-printf '%s' "$hash" > "$runtime_dir/session-sentinel.hash"
+sentinel_dir="$HOME/.claude/runtime/sentinel"
+mkdir -p "$sentinel_dir"
+printf '%s' "$hash" > "$sentinel_dir/${session_id}.hash"
+
+# Cleanup: remove hash files older than 24 hours
+find "$sentinel_dir" -name "*.hash" -type f -mtime +1 -delete 2>/dev/null || true
 
 context="Context sentinel active for this session. Sentinel: ${sentinel} — If later asked for the context sentinel, reply with the exact sentinel only. Session start source: ${source}."
 
