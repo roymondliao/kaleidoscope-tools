@@ -2,7 +2,9 @@
 # Override via environment variables:
 #   QUOTA_GUARD_THRESHOLD — remaining % to trigger handoff (default: 8)
 #   QUOTA_GUARD_USER_STATUSLINE — path to user's original statusLine script
+#   QUOTA_GUARD_SENTINEL_CHECKPOINTS — comma-separated context % thresholds (default: "40,50,60,70,80")
 
 threshold: 8
 quota_state_dir: "~/.claude/runtime/quota"
 handoff_output_dir: "docs/handoff"
+sentinel_checkpoints: [40, 50, 60, 70, 80]
