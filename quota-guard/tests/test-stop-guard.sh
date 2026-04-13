@@ -130,3 +130,127 @@ else
   echo "FAIL: expected pass through for null rate_limits, got: $OUTPUT5"
   exit 1
 fi
+
+# --- Test 6: Context below checkpoint → no additionalContext ---
+SENTINEL_DIR=$(mktemp -d)
+cat > "$TEST_STATE_DIR/test-guard-001.json" << 'QUOTA'
+{
+  "session_id": "test-guard-001",
+  "five_hour_remaining_pct": 50,
+  "seven_day_remaining_pct": 60,
+  "five_hour_resets_at": 1738425600,
+  "context_used_pct": 30
+}
+QUOTA
+
+OUTPUT6=$(echo "$MOCK_HOOK_INPUT" | \
+  QUOTA_STATE_DIR="$TEST_STATE_DIR" \
+  QUOTA_GUARD_THRESHOLD=8 \
+  QUOTA_GUARD_HANDOFF_DIR="$TEST_PROJECT_DIR/docs/handoff-t6" \
+  QUOTA_GUARD_SENTINEL_CHECKPOINTS="40,50,60" \
+  SENTINEL_STATE_DIR="$SENTINEL_DIR" \
+  bash "$GUARD" 2>/dev/null) || true
+
+if [ -z "$OUTPUT6" ] || ! echo "$OUTPUT6" | jq -e '.additionalContext' >/dev/null 2>&1; then
+  echo "PASS: context 30% below checkpoint 40% → no sentinel check"
+else
+  echo "FAIL: expected no additionalContext, got: $OUTPUT6"
+  exit 1
+fi
+
+# --- Test 7: Context above checkpoint → additionalContext injected ---
+cat > "$TEST_STATE_DIR/test-guard-001.json" << 'QUOTA'
+{
+  "session_id": "test-guard-001",
+  "five_hour_remaining_pct": 50,
+  "seven_day_remaining_pct": 60,
+  "five_hour_resets_at": 1738425600,
+  "context_used_pct": 45
+}
+QUOTA
+
+OUTPUT7=$(echo "$MOCK_HOOK_INPUT" | \
+  QUOTA_STATE_DIR="$TEST_STATE_DIR" \
+  QUOTA_GUARD_THRESHOLD=8 \
+  QUOTA_GUARD_HANDOFF_DIR="$TEST_PROJECT_DIR/docs/handoff-t7" \
+  QUOTA_GUARD_SENTINEL_CHECKPOINTS="40,50,60" \
+  SENTINEL_STATE_DIR="$SENTINEL_DIR" \
+  bash "$GUARD" 2>/dev/null) || true
+
+if echo "$OUTPUT7" | jq -e '.additionalContext' >/dev/null 2>&1; then
+  echo "PASS: context 45% above checkpoint 40% → sentinel check triggered"
+else
+  echo "FAIL: expected additionalContext, got: $OUTPUT7"
+  exit 1
+fi
+
+# --- Test 8: Same checkpoint not triggered twice ---
+OUTPUT8=$(echo "$MOCK_HOOK_INPUT" | \
+  QUOTA_STATE_DIR="$TEST_STATE_DIR" \
+  QUOTA_GUARD_THRESHOLD=8 \
+  QUOTA_GUARD_HANDOFF_DIR="$TEST_PROJECT_DIR/docs/handoff-t8" \
+  QUOTA_GUARD_SENTINEL_CHECKPOINTS="40,50,60" \
+  SENTINEL_STATE_DIR="$SENTINEL_DIR" \
+  bash "$GUARD" 2>/dev/null) || true
+
+if [ -z "$OUTPUT8" ] || ! echo "$OUTPUT8" | jq -e '.additionalContext' >/dev/null 2>&1; then
+  echo "PASS: checkpoint 40% already triggered → not triggered again"
+else
+  echo "FAIL: checkpoint 40% triggered twice, got: $OUTPUT8"
+  exit 1
+fi
+
+# --- Test 9: Next checkpoint triggers when context grows ---
+cat > "$TEST_STATE_DIR/test-guard-001.json" << 'QUOTA'
+{
+  "session_id": "test-guard-001",
+  "five_hour_remaining_pct": 50,
+  "seven_day_remaining_pct": 60,
+  "five_hour_resets_at": 1738425600,
+  "context_used_pct": 55
+}
+QUOTA
+
+OUTPUT9=$(echo "$MOCK_HOOK_INPUT" | \
+  QUOTA_STATE_DIR="$TEST_STATE_DIR" \
+  QUOTA_GUARD_THRESHOLD=8 \
+  QUOTA_GUARD_HANDOFF_DIR="$TEST_PROJECT_DIR/docs/handoff-t9" \
+  QUOTA_GUARD_SENTINEL_CHECKPOINTS="40,50,60" \
+  SENTINEL_STATE_DIR="$SENTINEL_DIR" \
+  bash "$GUARD" 2>/dev/null) || true
+
+if echo "$OUTPUT9" | jq -e '.additionalContext' >/dev/null 2>&1; then
+  echo "PASS: context 55% → checkpoint 50% triggered"
+else
+  echo "FAIL: expected checkpoint 50% trigger, got: $OUTPUT9"
+  exit 1
+fi
+
+# --- Test 10: Null context_used_pct → skip sentinel check ---
+cat > "$TEST_STATE_DIR/test-guard-001.json" << 'QUOTA'
+{
+  "session_id": "test-guard-001",
+  "five_hour_remaining_pct": 50,
+  "seven_day_remaining_pct": 60,
+  "five_hour_resets_at": 1738425600,
+  "context_used_pct": null
+}
+QUOTA
+
+SENTINEL_DIR2=$(mktemp -d)
+OUTPUT10=$(echo "$MOCK_HOOK_INPUT" | \
+  QUOTA_STATE_DIR="$TEST_STATE_DIR" \
+  QUOTA_GUARD_THRESHOLD=8 \
+  QUOTA_GUARD_HANDOFF_DIR="$TEST_PROJECT_DIR/docs/handoff-t10" \
+  QUOTA_GUARD_SENTINEL_CHECKPOINTS="40,50,60" \
+  SENTINEL_STATE_DIR="$SENTINEL_DIR2" \
+  bash "$GUARD" 2>/dev/null) || true
+
+if [ -z "$OUTPUT10" ] || ! echo "$OUTPUT10" | jq -e '.additionalContext' >/dev/null 2>&1; then
+  echo "PASS: null context_used_pct → skip sentinel check"
+else
+  echo "FAIL: expected skip for null context, got: $OUTPUT10"
+  exit 1
+fi
+
+rm -rf "$SENTINEL_DIR" "$SENTINEL_DIR2"
