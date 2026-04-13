@@ -20,6 +20,9 @@ sentinel_dir="$HOME/.claude/runtime/sentinel"
 mkdir -p "$sentinel_dir"
 printf '%s' "$hash" > "$sentinel_dir/${session_id}.hash"
 
+# Clear checkpoint state for this session (fresh sentinel = fresh checkpoints)
+rm -f "$sentinel_dir/${session_id}.checkpoints" 2>/dev/null || true
+
 # Cleanup: remove hash files older than 24 hours
 find "$sentinel_dir" -name "*.hash" -type f -mtime +1 -delete 2>/dev/null || true
 
