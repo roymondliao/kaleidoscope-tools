@@ -69,3 +69,41 @@ if [ -n "$STDOUT_OUTPUT" ]; then
   exit 1
 fi
 echo "PASS: quota-sampler produces no stdout"
+
+# --- Test 4: context_used_pct is written ---
+MOCK_WITH_CONTEXT='{
+  "session_id": "test-session-003",
+  "workspace": { "current_dir": "/home/user/project" },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 30, "resets_at": 1738425600 }
+  },
+  "context_window": {
+    "used_percentage": 52.3
+  }
+}'
+echo "$MOCK_WITH_CONTEXT" | QUOTA_STATE_DIR="$TEST_STATE_DIR" bash "$SAMPLER"
+
+CTX_FILE="$TEST_STATE_DIR/test-session-003.json"
+CTX_PCT=$(jq -r '.context_used_pct' "$CTX_FILE")
+if [ "$CTX_PCT" = "52.3" ]; then
+  echo "PASS: context_used_pct written correctly"
+else
+  echo "FAIL: context_used_pct=$CTX_PCT (expected 52.3)"
+  exit 1
+fi
+
+# --- Test 5: context_used_pct null when missing ---
+MOCK_NO_CTX='{
+  "session_id": "test-session-004",
+  "workspace": { "current_dir": "/home/user/project" }
+}'
+echo "$MOCK_NO_CTX" | QUOTA_STATE_DIR="$TEST_STATE_DIR" bash "$SAMPLER"
+
+NO_CTX_FILE="$TEST_STATE_DIR/test-session-004.json"
+NO_CTX_PCT=$(jq -r '.context_used_pct' "$NO_CTX_FILE")
+if [ "$NO_CTX_PCT" = "null" ]; then
+  echo "PASS: context_used_pct null when missing"
+else
+  echo "FAIL: expected null, got $NO_CTX_PCT"
+  exit 1
+fi
