@@ -79,6 +79,11 @@ Else:
 
 ### 2c. Push to remote
 
+First, check that there are commits ahead of main: `git rev-list --count main..HEAD`
+- If 0 commits ahead of main: stop and tell the user "No changes to create a PR for. The branch is identical to main."
+
+If there are commits ahead of main, proceed with push:
+
 If **no_remote_tracking** is true:
 - Push with upstream: `git push -u origin <branch>`
 
@@ -86,8 +91,7 @@ Else if **has_unpushed** is true:
 - Push: `git push`
 
 Else:
-- Already up to date. Check that there are commits ahead of main: `git rev-list --count main..HEAD`
-- If 0 commits ahead of main: stop and tell the user "No changes to create a PR for. The branch is identical to main."
+- Already up to date with remote. Continue.
 
 ## Step 3: Analyze Diff and Auto-Fill
 
@@ -173,6 +177,7 @@ Then ask: "Does this look good, or would you like to change anything?"
 
 - If the user requests changes: apply the edits and present the updated draft again.
 - If the user approves (e.g., "looks good", "ok", "yes", "lgtm"): proceed to Step 6.
+- If the user cancels (e.g., "cancel", "abort", "stop", "no", "nevermind"): abort PR creation. Tell the user: "PR creation aborted. Your branch and commits are still intact." Do NOT create the PR or undo any commits/pushes.
 
 ## Step 6: Create PR
 
