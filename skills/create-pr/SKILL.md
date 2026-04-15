@@ -88,3 +88,42 @@ Else if **has_unpushed** is true:
 Else:
 - Already up to date. Check that there are commits ahead of main: `git rev-list --count main..HEAD`
 - If 0 commits ahead of main: stop and tell the user "No changes to create a PR for. The branch is identical to main."
+
+## Step 3: Analyze Diff and Auto-Fill
+
+### 3a. Gather diff context
+
+Run in parallel:
+- `git diff main...HEAD` — full diff of all changes on this branch
+- `git log main..HEAD --oneline` — commit summaries on this branch
+
+### 3b. Auto-detect PR type(s)
+
+Analyze the changed files from `git diff main...HEAD --name-status` and select ALL applicable types:
+
+| Pattern | Type to check |
+|---------|--------------|
+| New source files (status `A`) with new exports, classes, or functions | `feat` |
+| Modified source files (status `M`) with no new public API surface | `refactor` |
+| Only files matching `*test*`, `*spec*`, `*_test.*`, `test_*` | `test` |
+| Only files matching `*.md`, `docs/**`, `README*` | `docs` |
+| Only files matching `*.yml`, `*.yaml`, `*.json`, `Makefile`, `Dockerfile`, `.github/**`, `.gitlab-ci*` | `chore` |
+| Changes that add caching, batching, indexing, or reduce algorithmic complexity | `perf` |
+| Only whitespace, import reordering, or formatting changes | `style` |
+| Changes that fix error handling, add null checks, handle edge cases, or fix incorrect behavior | `fix` |
+
+Multiple types can be selected. If unsure between types, prefer the more specific one.
+
+### 3c. Generate description
+
+Write one paragraph (2-4 sentences) summarizing the purpose of the changes. Derive this from:
+- Commit messages on the branch
+- The overall shape of the diff (what modules/files were touched)
+- Focus on the "why" and "what", not the "how"
+
+### 3d. Generate changelogs
+
+Write a bullet list of key changes, one per logical unit of work:
+- Each bullet starts with a verb: "Added", "Updated", "Removed", "Fixed", "Refactored"
+- Include TODO items if commit messages mention follow-up work: `- TODO: <description> (will be handled in another PR)`
+- Keep to 3-8 bullets. Group related small changes into one bullet.
