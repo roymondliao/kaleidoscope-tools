@@ -127,3 +127,68 @@ Write a bullet list of key changes, one per logical unit of work:
 - Each bullet starts with a verb: "Added", "Updated", "Removed", "Fixed", "Refactored"
 - Include TODO items if commit messages mention follow-up work: `- TODO: <description> (will be handled in another PR)`
 - Keep to 3-8 bullets. Group related small changes into one bullet.
+
+## Step 4: Ask for Jira Ticket
+
+Ask the user:
+
+> What's the Jira ticket for this PR? Please provide in the format: `[VIC-XXXX](https://jira.example.com/browse/VIC-XXXX) Ticket Title`
+>
+> Or type "skip" if there is no Jira ticket for this PR.
+
+Do not infer or guess the ticket number. Always ask. If the user says "skip", leave the Jira Tickets section as "N/A".
+
+## Step 5: Assemble and Present Draft
+
+### 5a. Build the PR body
+
+1. Read `reference/pr-template.md` from this skill's directory
+2. Fill the template:
+   - **PR Type checkboxes**: Change `- [ ]` to `- [x]` for each detected type from Step 3b
+   - **{description}**: Replace with the generated description from Step 3c
+   - **{jira_tickets}**: Replace with the user's Jira ticket from Step 4
+   - **{changelogs}**: Replace with the generated changelog bullets from Step 3d
+
+### 5b. Generate PR title
+
+Format: `<type(s)>: <concise summary>`
+
+Rules:
+- Single type: `feat: add score_v2 evaluation logic`
+- Multiple types: `feat,test: add webhook handler with coverage`
+- Maximum 70 characters
+- Summary describes the "what", not the "how"
+
+### 5c. Present the draft
+
+Show the user the complete draft in this format:
+
+> **PR Title:** `<generated title>`
+>
+> **PR Body:**
+>
+> <the fully assembled PR body>
+
+Then ask: "Does this look good, or would you like to change anything?"
+
+- If the user requests changes: apply the edits and present the updated draft again.
+- If the user approves (e.g., "looks good", "ok", "yes", "lgtm"): proceed to Step 6.
+
+## Step 6: Create PR
+
+Run:
+
+```bash
+gh pr create --title "<title>" --body "$(cat <<'EOF'
+<assembled PR body>
+EOF
+)"
+```
+
+If `gh pr create` succeeds: show the PR URL to the user.
+
+If `gh pr create` fails:
+- If the error mentions a PR already exists: suggest `gh pr view --web` to open the existing PR.
+- For any other error: show the full error message to the user.
+
+After PR creation, do NOT push additional changes or modify the PR. The skill is complete.
