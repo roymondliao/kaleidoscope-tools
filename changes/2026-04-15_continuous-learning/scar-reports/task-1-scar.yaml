@@ -1,0 +1,106 @@
+task_id: task-1
+completion_status: done_with_concerns
+
+# Fixes applied in code-review pass (2026-04-14):
+#   Critical 1: rewrite_frontmatter_status now returns bool; caller only mutates
+#               in-memory state on True. Block-scalar status fields emit WARNING
+#               and leave in-memory state unchanged.
+#   Critical 2: one_liner_safe renamed to one_liner_escaped (honest name).
+#               Backslash now escaped before double-quote to prevent corrupt YAML.
+#               Round-trip yaml.safe_load() validation added after index write;
+#               exits 1 with ERROR if index is unparseable.
+#   Critical 3: Dead sys.path.insert(0, '...') removed from test file.
+#   Important 1: death_test_malformed_frontmatter_no_crash now captures stderr
+#                and verifies WARNING/Skipping was emitted.
+#   Important 2: index_entries now filters to active-only entries.
+#                death_test_archive_threshold_archived_not_in_index_entries added.
+
+known_shortcuts:
+  - "YAML frontmatter parsing uses PyYAML via project venv. If venv is absent or
+    PyYAML is not installed, script falls back to system python3 + yaml — but if
+    neither has yaml, the script exits 1 with an error message. This is intentional:
+    better to fail loudly than silently produce a corrupt index."
+  - "one_liner is extracted by regex over the markdown body (first sentence of
+    'What went wrong' section). This is fragile for: non-English text, sentences
+    ending with '?' or '!', or multi-line sentences without punctuation. Falls
+    back to domain+trigger from frontmatter in all error cases."
+  - "index.yaml is written as hand-formatted YAML string, not via yaml.dump().
+    Backslash and double-quote are now escaped in one_liner_escaped(). Round-trip
+    validation catches any remaining serialization bugs at write time and exits 1."
+  - "In-place frontmatter rewriting (for archive status) uses regex substitution
+    on the raw file text. Files where 'status:' uses a block scalar (status: |-\\n  active)
+    cannot be rewritten — rewrite_frontmatter_status returns False, emits WARNING,
+    and the entry stays active (not archived). This is safe (no divergence) but
+    means archiving may fail silently for non-standard frontmatter formatting."
+
+silent_failure_conditions:
+  - "If the .learnings/ directory contains files with valid YAML frontmatter but
+    no 'What went wrong' or 'Correct approach' sections, the one_liner falls back
+    to domain+trigger. The index is valid but the one_liner is less useful. No
+    warning is emitted. Future sessions see degraded recall quality without knowing why."
+  - "If PyYAML parses a last_validated value as a Python date object (which it
+    does for valid ISO dates), string comparison is used after str() conversion.
+    This works for YYYY-MM-DD format but if a file uses a non-ISO date format,
+    that file sorts to '0000-00-00' and is archived first. No warning is emitted
+    for non-standard date formats in last_validated."
+  - "The deprecation warning for datetime.datetime.utcnow() is silenced via
+    stderr redirect in tests. If Python removes utcnow() in a future version,
+    the script will fail with an AttributeError. Affects Python 3.12+ (currently
+    only a DeprecationWarning). The fix is trivial but deferred."
+  - "The script does not detect the case where two .md files claim the same id
+    in their frontmatter. The index will contain duplicate id entries. No
+    deduplication or warning is performed."
+  - "If a file's status field uses a block scalar (e.g., 'status: |-\\n  active'),
+    it is correctly identified as active by PyYAML parse, but rewrite_frontmatter_status
+    cannot update it on disk. A WARNING is emitted and the entry stays active.
+    On the next rebuild, the same entry will again be selected for archiving (oldest
+    active by last_validated), the WARNING will fire again, and the entry will
+    remain active indefinitely. This is a degenerate loop — not an infinite-crash
+    loop — but the index active_count will never drop to 30."
+
+assumptions_made:
+  - assumption: "PyYAML is available in the project venv at .venv/bin/python3"
+    verified: true
+    note: "Confirmed at /Users/yuyu_liao/personal/kaleidoscope-tools/.venv/bin/python3 with yaml importable"
+  - assumption: "last_validated field is present in all active learning files"
+    verified: false
+    note: "If absent, PyYAML returns None; the sort key function converts None to '0000-00-00',
+      treating it as the oldest entry. This means files missing last_validated are archived
+      first. This is probably correct behavior but was not explicitly specified."
+  - assumption: "Learning .md files use UTF-8 encoding"
+    verified: false
+    note: "Script opens all files with encoding='utf-8'. Files in other encodings
+      (e.g., Latin-1) will raise UnicodeDecodeError, which is caught by the broad
+      except clause and the file is skipped with a warning. Acceptable."
+  - assumption: "index.yaml should include ONLY active entries in the entries: list"
+    verified: true
+    note: "Resolved in code-review pass: index_entries now filters to active entries only.
+      Archived entries are excluded from entries:. active_count + archived_count reflect
+      all scanned files, but entries: is the session-loader's source and shows only active."
+  - assumption: "The ACTIVE_LIMIT of 30 means at most 30 active entries in the index;
+    archiving reduces to exactly 30, not fewer"
+    verified: true
+    note: "The script archives exactly (count - 30) entries when count > 30.
+      With 35 active, archives 5, leaving 30."
+  - assumption: "one_liner values will not contain Unicode escape sequences that
+    look like \\u or \\U followed by hex digits"
+    verified: false
+    note: "In double-quoted YAML, \\uXXXX and \\UXXXXXXXX are valid Unicode escapes.
+      If a one_liner contains a literal \\u (e.g., from a path or code snippet) followed
+      by 4 hex digits, PyYAML will interpret it as a Unicode codepoint on round-trip
+      parse. The value will survive parse but will differ from what was written. This
+      is a semantic corruption that the round-trip validation will NOT catch (parse
+      succeeds). Severity: low (unlikely in natural language one_liners)."
+
+debt_registered: true
+debt_location: |
+  scripts/learnings-rebuild.sh:
+  1. datetime.datetime.utcnow() deprecation (Python 3.12+ DeprecationWarning,
+     will become error in future Python version). Fix: datetime.datetime.now(datetime.UTC).
+  2. No deduplication of id fields across learning files.
+  3. Block-scalar status fields cannot be archived (WARNING loop on every rebuild
+     if count stays above ACTIVE_LIMIT). Fix: detect block scalars and rewrite
+     using full YAML parse+dump of the frontmatter section only.
+  4. Unicode escape sequences in one_liner (\\uXXXX) survive YAML round-trip but
+     are semantically mutated. Fix: use yaml.dump() for one_liner serialization
+     instead of manual double-quote wrapping.

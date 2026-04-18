@@ -1,0 +1,103 @@
+feature: continuous-learning
+coverage_type: verified
+
+scenarios:
+  # --- Death paths first ---
+
+  - name: "Silent failure - learning written but index not updated"
+    type: death_path
+    given: "Agent writes a new learning file to .learnings/"
+    when: "Index rebuild fails (disk error, parse error, concurrent write)"
+    then:
+      - "Learning file exists on disk but is absent from index.yaml"
+      - "Next session loader does NOT see this learning"
+      - "Index rebuild script must detect orphaned files (files without index entry)"
+      - "Rebuild script must report orphan count, never silently ignore"
+
+  - name: "Silent failure - index references deleted learning"
+    type: death_path
+    given: "index.yaml has entry for learning X"
+    when: "Human manually deletes X.md from .learnings/ without rebuilding index"
+    then:
+      - "Session loader injects one-liner for non-existent learning"
+      - "Query skill attempts to read X.md and fails"
+      - "Loader must validate file existence for each entry on load"
+      - "Stale entries must be flagged, not silently skipped"
+
+  - name: "Silent failure - learning content is wrong but persists forever"
+    type: death_path
+    given: "Agent recorded a correction that was itself incorrect or context-dependent"
+    when: "90+ days pass without the learning being referenced or validated"
+    then:
+      - "Incorrect learning continues to influence future sessions"
+      - "Every learning must have last_validated date"
+      - "Entries with last_validated > 90 days must be auto-archived"
+      - "Archive removes from index.yaml active entries but preserves .md file"
+
+  - name: "Silent failure - hook injection fails silently"
+    type: death_path
+    given: "SessionStart hook encounters malformed index.yaml"
+    when: "Hook runs at session start"
+    then:
+      - "Hook must NOT exit 0 silently (appearing as 'no learnings')"
+      - "Hook must inject error message: 'Learnings index is malformed, run rebuild'"
+      - "Malformed state must be distinguishable from 'no learnings exist'"
+
+  # --- Degradation paths ---
+
+  - name: "Degradation - archive threshold exceeded"
+    type: degradation
+    given: ".learnings/ has 35 active learning files"
+    when: "Index rebuild runs"
+    then:
+      - "Oldest 5 entries by last_validated are set to status: archived"
+      - "index.yaml active_count returns to 30"
+      - "Archived learnings .md files retain status: archived in frontmatter"
+      - "Session loader injects note: 'N learnings archived, use recall to search all'"
+
+  - name: "Degradation - .learnings/ dir exists but is empty"
+    type: degradation
+    given: "All learning files have been deleted or archived"
+    when: "Session loader runs"
+    then:
+      - "Loader must not inject empty list or error"
+      - "Loader exits cleanly with no injection (zero token cost)"
+
+  # --- Happy paths with evidence ---
+
+  - name: "Success - learning written and indexed"
+    type: happy_path
+    given: "Human corrects agent's judgment in a project"
+    when: "Agent writes learning file and triggers index rebuild"
+    then:
+      - "Learning .md file exists in .learnings/ with correct YAML frontmatter"
+      - "index.yaml contains new entry with matching id and one_liner"
+      - "active_count is incremented"
+      - "last_rebuilt timestamp is updated"
+
+  - name: "Success - learnings loaded at session start"
+    type: happy_path
+    given: ".learnings/index.yaml exists with 3 active entries"
+    when: "New session starts (SessionStart hook fires)"
+    then:
+      - "Context injection contains all 3 one-liners with domain tags"
+      - "Injection format matches: 'Project Learnings (3 active):'"
+      - "Total injection size is < 500 tokens"
+
+  - name: "Success - recall skill returns full detail"
+    type: happy_path
+    given: ".learnings/ has 10 active learnings, 3 in domain 'testing'"
+    when: "User invokes /samsara:recall testing"
+    then:
+      - "Skill reads and presents full markdown content of 3 testing learnings"
+      - "Each learning shows: what went wrong, root cause, correct approach, context"
+      - "Non-matching learnings are not loaded into context"
+
+  - name: "Success - index rebuild detects and reports integrity issues"
+    type: happy_path
+    given: ".learnings/ has 5 .md files but index.yaml only has 3 entries"
+    when: "Index rebuild script runs"
+    then:
+      - "Script reports: '2 orphaned files found, adding to index'"
+      - "New index.yaml has all 5 entries"
+      - "Script exit code indicates changes were made"

@@ -1,0 +1,145 @@
+task_id: task-3
+completion_status: done_with_concerns
+
+scars:
+  - type: silent_failure
+    description: >
+      Keyword search only covers one_liner values from index.yaml, not full body text
+      of .md files. A learning where the keyword appears only in the body section
+      (e.g., in the 'Correct approach' section but not in the extracted one_liner)
+      will be silently missed. The user receives no warning that the search was
+      incomplete — only that no results matched.
+    severity: medium
+    mitigation: >
+      Noted as Known Limitation #1 in SKILL.md. Advisory note added to Step 4b.
+
+  - type: silent_failure
+    description: >
+      File lookup scans all .md files for matching frontmatter id on each recall.
+      This is O(N) reads per result. For 30 active entries in a full domain filter,
+      the skill reads up to 30 * N files (N = total .md count). This is unavoidable
+      given the YYYY-MM-DD_slug.md filename convention, but creates a scaling concern
+      for large learning sets. No maximum file count guard is defined in the skill.
+    severity: low
+    mitigation: >
+      Noted as Known Limitation #3 in SKILL.md. Accepted risk — a filename field in
+      index.yaml entries would eliminate O(N) scan (registered as debt).
+
+  - type: silent_failure
+    description: >
+      The --all flag requires scanning and parsing frontmatter of all .md files.
+      The skill does not specify a maximum safe file count. For a project with
+      200+ archived learnings, this could load an unacceptable number of tokens
+      into context. No guard is defined.
+    severity: low
+    mitigation: Noted as Known Limitation #2 in SKILL.md. Accepted risk.
+
+  - type: silent_failure
+    description: >
+      If index.yaml has archived_count = 0 in its header but archived .md files
+      exist (e.g., index was rebuilt before archiving completed, or index is stale),
+      the skill's 'No active learnings. N archived learnings exist' message will
+      use the stale archived_count from the header. However, --all will still
+      correctly scan .md files and find the true archived set. The discrepancy
+      exists only in the Step 2 advisory message, not in the actual --all output.
+    severity: low
+    mitigation: >
+      Noted as existing stale-index risk in scar report. The --all code path scans
+      actual files so it is immune. The Step 2 message may undercount — accepted risk.
+
+  - type: assumption
+    description: >
+      Combined argument syntax (e.g., /samsara:recall testing --all) is not explicitly
+      handled in Step 3's dispatch logic. Step 3 dispatches to exactly one of three
+      cases: no argument, --all alone, or a domain/keyword. If an agent passes
+      "testing --all" as the argument string, Step 3 treats it as a domain/keyword
+      and passes it to Step 4a/4b. Step 4a/4b then references "if --all was specified"
+      — but the LLM must infer this from the raw argument string. This is an implicit
+      parsing assumption.
+    severity: medium
+    mitigation: >
+      The interface comment says --all "includes archived learnings in results" without
+      specifying combination syntax. Step 4a and 4b both mention --all modifier. An LLM
+      agent reading the skill will likely parse --all out of a combined argument.
+      The ambiguity is pre-existing and not introduced by this fix cycle. Accepted risk.
+      A future fix would add explicit argument tokenization to Step 3.
+
+  - type: edge_case
+    description: >
+      When --all is specified and entries is empty (active=0), Step 2 now bypasses
+      the stop guard. If .learnings/ contains no .md files at all (empty directory),
+      Step 3 --all scanning will produce 0 archived entries and correctly reports
+      "No learnings found (0 active, 0 archived)". This path is covered.
+    severity: low
+    mitigation: Explicit handling added to Step 3 --all block, item 3.
+
+  - type: assumption
+    description: >
+      Domains are assumed to be single words or hyphenated terms. Multi-word domain
+      names (e.g., "test coverage") are not supported — they are treated as keyword
+      searches. This assumption was previously unlabeled.
+    severity: low
+    mitigation: >
+      Assumption is now explicitly labeled in Step 3 with a Note following the
+      domain/keyword dispatch block.
+
+unresolved_assumptions:
+  - assumption: >
+      Skill description is specific enough to trigger on 'recall', 'past learnings',
+      'what did we learn' without false-triggering on unrelated queries.
+    consequence_if_wrong: >
+      False positive: skill invoked on unrelated queries, fetching irrelevant content.
+      False negative: agent fails to invoke skill on idiomatic queries like
+      'what mistakes have we made in testing'.
+
+  - assumption: >
+      Reading 5-10 full learning .md files at once does not exceed reasonable
+      context cost (~1000-2000 tokens per file).
+    consequence_if_wrong: >
+      Large learning bodies could consume 15000+ tokens in a single domain filter
+      call (30 active entries * 500 tokens each). No limit is enforced in the skill.
+
+  - assumption: >
+      Learning filenames use YYYY-MM-DD_slug.md convention, not <id>.md.
+    consequence_if_wrong: >
+      File lookup scan (frontmatter id matching) is unnecessary overhead if filenames
+      used <id>.md. Confirmed correct per overview.md — filenames do use date-slug format.
+
+  - assumption: >
+      index.yaml entries field contains only active entries.
+    consequence_if_wrong: >
+      Archived entries appearing in index.yaml entries would be surfaced as active by
+      the skill. Confirmed correct per task-1 scar report.
+
+  - assumption: >
+      archived .md files contain a one_liner field in their frontmatter that can be
+      used for keyword matching in Step 4b --all mode.
+    consequence_if_wrong: >
+      If archived .md files lack a one_liner frontmatter field (e.g., older format
+      before the field was introduced), keyword + --all search will silently miss them.
+      No fallback to body-text search is defined.
+
+known_shortcuts:
+  - >
+    Combined argument syntax (/samsara:recall <domain> --all) relies on implicit LLM
+    argument parsing — no explicit tokenization step is defined in the skill.
+    An agent that does not parse --all out of a combined argument will miss the modifier.
+  - >
+    The Step 2 advisory message for empty entries uses archived_count from the index
+    header, which may be stale. The actual --all scan reads files directly and is
+    immune to staleness, but the pre-scan advisory message is not.
+
+debt_registered: true
+debt_location: |
+  samsara/skills/recall/SKILL.md:
+  1. Known Limitations section, item 1 — keyword search one_liner-only shortcut.
+     Fix: add instruction to offer body-text search when one_liner search returns
+     no results (at cost of reading all active .md files).
+  2. Known Limitations section, item 3 — O(N) file scan per result on frontmatter
+     id lookup. Fix: learnings-rebuild.sh could write a filename field into index.yaml
+     entries so the skill can use direct path lookup instead of scanning.
+  3. No index staleness warning. Fix: compare active_count in index vs actual .md
+     file count and warn if they differ.
+  4. No explicit argument tokenization. Fix: add a Step 0 or Step 2.5 that parses
+     raw argument into (filter_term, flags) so --all is a boolean and filter_term
+     is clean. This removes the implicit LLM parsing assumption.

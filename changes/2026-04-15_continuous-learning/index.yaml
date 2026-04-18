@@ -1,0 +1,31 @@
+feature: continuous-learning
+status: done
+
+tasks:
+  - id: task-1
+    title: "Index rebuild script (scripts/learnings-rebuild.sh)"
+    status: done_with_concerns
+    scar_count: 3
+    unresolved_assumptions: 2
+    depends_on: []
+
+  - id: task-2
+    title: "SessionStart hook (samsara/hooks/check-learnings)"
+    status: done
+    scar_count: 6
+    unresolved_assumptions: 2
+    depends_on: [task-1]
+
+  - id: task-3
+    title: "Recall skill (samsara/skills/recall/SKILL.md)"
+    status: done_with_concerns
+    scar_count: 2
+    unresolved_assumptions: 1
+    depends_on: [task-1]
+
+  - id: task-4
+    title: "Hook registration and integration"
+    status: done
+    scar_count: 2
+    unresolved_assumptions: 2
+    depends_on: [task-2]

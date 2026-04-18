@@ -1,0 +1,166 @@
+task_id: task-2
+completion_status: done
+
+# Code-review fixes applied 2026-04-14:
+#   Critical 1: partial Python output now detected via got_count/got_missing_count flags
+#   Critical 2: death test 3 now uses `env -u CLAUDE_PROJECT_DIR` to prevent false pass
+#   Critical 3: VENV_PYTHON in tests derived from REPO_ROOT (relative to script), not hardcoded
+#   Critical 4: missing_entries_key now injects "INDEX INCOMPLETE (missing 'entries' key)"
+#               malformed/python_no_yaml inject "INDEX MALFORMED (parse error)"
+#   Important 1: (( depth++ )) || true comment added explaining arithmetic-zero and set -e
+#   Important 2: mktemp used for stderr capture; trap on EXIT cleans up
+#   Important 3: inject_message moved before venv discovery; PYTHON_UNAVAILABLE routes through it
+
+scars:
+  - type: silent_failure
+    description: >
+      Partial Python output (Python killed after STATUS:ok and COUNT: but before MISSING_COUNT:)
+      would leave missing_count at 0, silently undercounting missing .md files and injecting
+      stale entries as valid. Fixed by tracking got_count/got_missing_count boolean flags and
+      treating incomplete ok output as MALFORMED.
+    severity: high
+    mitigation: >
+      After parsing all line-protocol fields, if status is ok but got_count or got_missing_count
+      is false, inject MALFORMED error instead of proceeding with default values.
+
+  - type: silent_failure
+    description: >
+      Death test 3 (CLAUDE_PROJECT_DIR unset) would false-pass if the test runner already has
+      CLAUDE_PROJECT_DIR set in the environment (e.g., running inside Claude Code). The hook
+      would find a real .learnings/ directory and inject real learnings — test passes for the
+      wrong reason, masking the real path under test.
+    severity: high
+    mitigation: >
+      Test now uses `env -u CLAUDE_PROJECT_DIR bash "$HOOK"` to explicitly clear the variable
+      before running the hook in this test case.
+
+  - type: assumption
+    description: >
+      VENV_PYTHON was hardcoded as an absolute path to a personal machine path. On any other
+      developer's machine or CI environment, the pre-flight check would fail immediately.
+    severity: high
+    mitigation: >
+      VENV_PYTHON now derived as "${REPO_ROOT}/.venv/bin/python3" where REPO_ROOT is computed
+      relative to the test script location — same portability approach as the hook itself.
+
+  - type: edge_case
+    description: >
+      missing_entries_key (structurally valid YAML, just missing the entries key) was reporting
+      "INDEX MALFORMED" — a lie that implies a parse error when the file parsed successfully.
+    severity: medium
+    mitigation: >
+      Separated error messages: malformed/python_no_yaml inject "INDEX MALFORMED (parse error)",
+      missing_entries_key injects "INDEX INCOMPLETE (missing 'entries' key)". Death test 5
+      updated to assert INCOMPLETE not MALFORMED.
+
+  - type: missing_test
+    description: >
+      stderr capture in tests used a hardcoded /tmp/test-check-learnings-stderr.txt path.
+      Concurrent test runs (e.g., in CI matrix) would have test processes reading each other's
+      stderr output, causing non-deterministic failures.
+    severity: low
+    mitigation: >
+      Replaced with mktemp; cleanup registered via trap EXIT.
+
+  - type: assumption
+    description: >
+      inject_message was defined after the venv discovery block. PYTHON_UNAVAILABLE error used
+      an inline printf, diverging from the established inject_message helper. If inject_message's
+      output format changes, PYTHON_UNAVAILABLE silently stays on the old format.
+    severity: low
+    mitigation: >
+      Moved inject_message (and escape_for_json) before _find_venv_python. PYTHON_UNAVAILABLE
+      now calls inject_message directly.
+
+  - type: assumption
+    description: >
+      (( depth++ )) || true in _find_venv_python was uncommented. A reader unfamiliar with
+      bash arithmetic exit codes would remove || true assuming it suppresses a real error.
+    severity: low
+    mitigation: >
+      Added comment explaining that (( expr )) returns exit code 1 when the arithmetic result
+      is 0, which triggers set -e without || true.
+
+known_shortcuts:
+  - "Python subprocess output is parsed via simple line-prefix protocol (STATUS:, ENTRY:, etc.)
+    rather than a structured format. If a one_liner contains a literal newline (after .replace),
+    it would split into a new line and be parsed as an unknown prefix (silently dropped).
+    PyYAML one_liners loaded from YAML should not contain raw newlines, but this is not
+    validated at the Python layer."
+  - "The pipe character '|' in domain or one_liner is replaced with '/' before transmission
+    in the line-protocol. This means a one_liner like 'pipe | operator' becomes 'pipe / operator'
+    in the injected context. No warning is emitted for this substitution."
+  - "venv discovery walks up 5 directory levels from the hooks/ directory. If the hook is
+    installed at a depth > 5 from the project root containing .venv, fallback to system
+    python3 occurs silently. System python3 may lack PyYAML, causing MALFORMED injection
+    instead of silent failure — this is loud but possibly confusing."
+
+silent_failure_conditions:
+  - "If PyYAML is absent from venv AND system python3 also lacks yaml, the hook injects
+    'PYTHON UNAVAILABLE' message. However, if system python3 does not exist at all and venv
+    walk fails, the _find_venv_python function returns 1 and the inject_message branch fires
+    correctly. Only scenario where truly silent: if python3 is on PATH but crashes before
+    printing STATUS: line — caught by the || branch around the python_output=$(...) call."
+  - "If the index.yaml file is readable but the Python process is killed by SIGKILL (e.g.,
+    timeout exceeded at OS level before hook timeout), python_output would be empty string.
+    The empty status case correctly triggers MALFORMED injection, not silent exit."
+  - "The hook uses set -euo pipefail. If any guard produces an unexpected non-zero exit
+    (e.g., a [ ! -d ] check on a symlink that is not a directory), the script will exit 1
+    rather than 0. Claude Code hooks that exit non-zero may be treated differently than
+    hooks that exit 0 with JSON — this behavior is not tested."
+  - "Death test 2 verifies that ALL-missing entries injects a warning. However, the warning
+    text for all-missing differs from the partial-missing warning. Both paths were tested
+    but the all-missing path message references 'ALL backing .md files missing' which may
+    be confusing if the user ran rebuild right before the session (race condition: rebuild
+    runs, deletes archived .md files that were still in the index, session starts before
+    index is refreshed)."
+
+assumptions_made:
+  - assumption: "CLAUDE_PROJECT_DIR is set when the hook runs in a project context"
+    verified: false
+    note: "If CLAUDE_PROJECT_DIR is not set (e.g., hook runs in a non-project shell
+      session), the hook exits 0 silently — correct behavior. But if CLAUDE_PROJECT_DIR
+      is set to the wrong directory (e.g., a parent path), the hook looks in the wrong
+      place and exits 0 silently, missing valid learnings. This is inherited behavior
+      from check-codebase-map and is not specific to this task."
+
+  - assumption: "PyYAML is available in .venv/bin/python3 of the project"
+    verified: true
+    note: "Confirmed: /Users/yuyu_liao/personal/kaleidoscope-tools/.venv/bin/python3
+      imports yaml successfully. venv walk starts from the hooks/ directory's parent
+      chain. If hooks are installed in a different project without a .venv, fallback
+      to system python3 is attempted — if that also lacks yaml, MALFORMED is injected
+      loudly rather than silently failing."
+
+  - assumption: "index.yaml entries: list contains only active entries (archived excluded)"
+    verified: true
+    note: "Resolved in task-1 code-review pass: index_entries filters to active-only.
+      The hook does not re-check entry status fields — it trusts the index."
+
+  - assumption: "Hook timeout of 3000ms is sufficient for Python startup + 30-entry read"
+    verified: false
+    note: "Python cold-start is ~200-400ms on this machine. 30 entries each checked
+      for .md existence (os.path.isfile) is ~30 filesystem stat calls. On a local SSD
+      this is <10ms total. On a network filesystem or under load, could approach timeout.
+      Mitigation: hook timeout set in hooks.json — task-4 should verify timeout value
+      when registering check-learnings."
+
+  - assumption: "one_liner values in index.yaml do not contain the pipe character '|'
+    as a significant part of the content"
+    verified: false
+    note: "The line-protocol uses '|' as a field separator between domain and one_liner.
+      domain is unlikely to contain '|'; one_liner is user-generated text and could
+      contain '|' (e.g., 'use git log --oneline | head'). The hook replaces '|' with '/'
+      in both fields before transmission. This is a semantic mutation not warned about."
+
+debt_registered: true
+debt_location: |
+  samsara/hooks/check-learnings:
+  1. Pipe character '|' in domain or one_liner is silently replaced with '/'.
+     Fix: use a different line-protocol delimiter (e.g., \x01) or use JSON output
+     from the Python subprocess instead of the custom line-protocol.
+  2. Hook exits 1 (set -e) on unexpected bash errors rather than injecting an error
+     message and exiting 0. Claude Code's behavior on hook exit 1 vs exit 0 is
+     unverified. Investigate in task-4 integration testing.
+  3. The warning text for all-missing vs partial-missing entries differs in wording.
+     Standardize to a single format to reduce confusion in edge cases.

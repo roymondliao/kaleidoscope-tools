@@ -66,7 +66,6 @@ Standalone skills that can be used across projects.
 | `context-sentinel-check` | Verify agent context retention; auto-compact if lost |
 | `zettelkasten-coach` | Transform literature into Zettelkasten permanent notes |
 | `obsidian-organizer` | Organize Obsidian vaults in Research-Optimized Zettelkasten style |
-| `continuous-learning-v2` | Instinct-based learning system that evolves session observations into skills |
 
 ## Agents
 

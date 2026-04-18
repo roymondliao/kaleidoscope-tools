@@ -1,0 +1,29 @@
+task_id: task-4
+completion_status: done
+
+known_shortcuts:
+  - "Hook timeout set to 3000ms matching check-codebase-map without independent
+    measurement of check-learnings actual execution time with 30 entries."
+
+silent_failure_conditions:
+  - "If hooks.json becomes invalid JSON (e.g., trailing comma, missing bracket),
+    ALL three SessionStart hooks stop firing — including samsara-bootstrap injection.
+    The system silently loses its entire identity and constraint set."
+  - "If check-learnings hook is registered but the script file is not executable
+    (missing chmod +x or wrong path), Claude Code silently skips it. No learnings
+    injection, indistinguishable from 'no learnings exist'."
+
+assumptions_made:
+  - assumption: "Hook execution order in the array is sequential (session-start → check-codebase-map → check-learnings)"
+    verified: false
+    note: "Claude Code documentation does not specify whether hooks in the same
+      matcher array run sequentially or in parallel. If parallel, a slow
+      check-learnings could overlap with session-start injection timing."
+  - assumption: "3000ms timeout is sufficient for check-learnings"
+    verified: false
+    note: "Copied from check-codebase-map. check-learnings runs Python + reads
+      up to 30 index entries + stats up to 30 .md files. On slow I/O this could
+      exceed 3000ms. If it does, the hook is silently killed with no output."
+
+debt_registered: true
+debt_location: "samsara/hooks/hooks.json — timeout value unverified for check-learnings workload"

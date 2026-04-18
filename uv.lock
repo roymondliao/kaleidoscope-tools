@@ -278,6 +278,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pymupdf" },
     { name = "pytest" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -292,6 +293,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pymupdf", specifier = ">=1.26.7" },
     { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [[package]]
