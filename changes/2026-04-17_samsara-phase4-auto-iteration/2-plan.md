@@ -112,8 +112,9 @@ Self-iteration 的規則：
 ### Signal Lost 計量
 
 ```
-signal_lost = count(assumptions_made where verified == false)
+signal_lost = count(known_shortcuts)
             + count(silent_failure_conditions)
+            + count(assumptions_made where verified == false)
 ```
 
 Level 1 後 signal_lost 應該下降（task-level items resolved）。
