@@ -217,3 +217,11 @@ __marimo__/
 
 # Deliberative consensus runtime artifacts
 output/
+
+# samsara feature research artifacts (kept locally, not shipped)
+# These contain personal code derived from user hooks, experiment outputs,
+# and smoke tests validating instruction-text structure — kept locally
+# for ongoing verification but not part of feature ship surface.
+changes/*/artifacts/
+changes/*/experiment/
+tests/samsara/code-quality-reviewer/
