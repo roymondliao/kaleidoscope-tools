@@ -225,3 +225,4 @@ output/
 changes/*/artifacts/
 changes/*/experiment/
 tests/samsara/code-quality-reviewer/
+.samsara
