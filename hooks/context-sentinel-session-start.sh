@@ -11,7 +11,19 @@ else
   session_id="unknown"
 fi
 
-# Auto-generate random sentinel per session (no env var needed)
+# compact and resume must not regenerate or overwrite the hash:
+# - compact: sentinel memory test relies on Claude recalling from compacted context
+# - resume: continuing an existing session whose sentinel is already established
+if [ "$source" = "compact" ] || [ "$source" = "resume" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    jq -n '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
+  else
+    echo '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
+  fi
+  exit 0
+fi
+
+# startup / clear: generate a new sentinel
 sentinel="$(openssl rand -hex 8)"
 
 # Store hash (not plaintext) so Claude can't cheat by reading the file

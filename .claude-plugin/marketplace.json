@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "kaleidoscope-tools",
   "metadata": {
-    "version": "1.4.0",
+    "version": "1.6.1",
     "description": "Collection of cool development tools which include skills, agents, and hooks"
   },
   "owner": {
