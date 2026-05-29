@@ -8,7 +8,7 @@ argument-hint: "[domain, keyword, or --all to include archived]"
 
 Load full content of project failure learnings on demand. When session-start one-liners are not enough detail, this skill fetches the full text.
 
-This skill reads `.learnings/` in the current project root. It is workflow-neutral — it does not assume samsara or any other workflow.
+This skill reads `.learnings/` in the current project root. It is workflow-neutral and does not assume any specific workflow.
 
 ## Interface
 

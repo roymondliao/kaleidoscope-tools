@@ -4,7 +4,7 @@
 
 ## Context
 
-The project currently has multiple paths to create PRs (`commit-commands:commit-push-pr`, `superpowers:finishing-a-development-branch`, `samsara:validate-and-ship`), but none enforce a consistent PR body format. The existing default is a minimal 2-section template (`## Summary` + `## Test Plan`) that lacks team-specific structure like PR type classification, Jira ticket linking, and detailed changelogs.
+The project currently has multiple paths to create PRs (`commit-commands:commit-push-pr`, `superpowers:finishing-a-development-branch`), but none enforce a consistent PR body format. The existing default is a minimal 2-section template (`## Summary` + `## Test Plan`) that lacks team-specific structure like PR type classification, Jira ticket linking, and detailed changelogs.
 
 This skill introduces a standardized PR template and an intelligent workflow that auto-generates PR content from git context, then presents it for user approval before creation.
 
@@ -26,7 +26,7 @@ This skill introduces a standardized PR template and an intelligent workflow tha
 - Hardcoded Jira base URL (user edits template if they want this)
 - Test Plan section in PR body (CI enforces test passage)
 - Hook enforcement of template on other PR creation paths
-- Integration with samsara or superpowers workflows (standalone)
+- Integration with external workflow plugins (standalone)
 - PR update/edit after creation
 - Draft PR support
 - Multi-repo PR creation

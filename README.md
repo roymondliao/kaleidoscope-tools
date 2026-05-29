@@ -4,14 +4,6 @@ A collection of Claude Code plugins, skills, and agents for building structured 
 
 ## Plugins
 
-### [Samsara](samsara/)
-
-**向死而驗 — Death-first development workflow.**
-
-A complete development lifecycle framework with existential accountability for every line of code. Includes research, planning, implementation, debugging, validation, and codebase mapping skills.
-
-See [samsara/README.md](samsara/README.md) for details.
-
 ### [Quota Guard](quota-guard/)
 
 **Quota monitoring & cross-tool handoff.**

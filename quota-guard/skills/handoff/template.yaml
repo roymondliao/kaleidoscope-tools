@@ -16,7 +16,7 @@ project:
   description: ""               # one-line project summary
 
 workflow:
-  name: ""                      # e.g., "samsara:implement", "superpowers:brainstorming"
+  name: ""                      # e.g., "feature-dev:implement", "superpowers:brainstorming"
   phase: ""                     # current phase/step in the workflow
   plan_file: ""                 # relative path to plan doc
   spec_file: ""                 # relative path to spec doc

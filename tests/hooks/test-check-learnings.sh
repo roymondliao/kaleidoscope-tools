@@ -307,7 +307,7 @@ assert 'Project Learnings' in msg, 'missing header'
 assert '3' in msg, 'count 3 not mentioned'
 assert 'Vitest' in msg or 'testing' in msg, 'testing entry missing'
 assert 'migrations' in msg.lower() or 'database' in msg or 'DB' in msg, 'database entry missing'
-assert 'recall' in msg.lower() or '/samsara' in msg, 'recall hint missing'
+assert '/recall-learnings' in msg, 'recall hint missing'
 print('all assertions passed')
 " 2>/dev/null; then
     pass "3 valid entries → formatted summary injected with count and one_liners"
