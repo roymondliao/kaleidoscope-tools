@@ -71,7 +71,7 @@ def is_daemon_alive(pid_file: str) -> bool:
         if pid <= 1:
             os.remove(pid_file)
             return False
-    except (IOError, ValueError):
+    except IOError, ValueError:
         try:
             os.remove(pid_file)
         except OSError:
@@ -100,7 +100,7 @@ def read_daemon_pid(pid_file: str) -> int | None:
     try:
         with open(pid_file, "r") as f:
             return int(f.read().strip())
-    except (IOError, ValueError):
+    except IOError, ValueError:
         return None
 
 
@@ -114,7 +114,7 @@ def increment_counter(counter_file: str) -> int:
         if os.path.exists(counter_file):
             with open(counter_file, "r") as f:
                 current = int(f.read().strip() or "0")
-    except (IOError, ValueError):
+    except IOError, ValueError:
         current = 0
 
     new_count = current + 1

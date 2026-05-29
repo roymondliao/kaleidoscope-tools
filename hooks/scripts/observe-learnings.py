@@ -84,7 +84,7 @@ def _bridge_to_observer(project_dir: str) -> None:
                     stderr=subprocess.DEVNULL,
                     start_new_session=True,
                 )
-            except (OSError, subprocess.SubprocessError):
+            except OSError, subprocess.SubprocessError:
                 pass
         return  # No signal on the same invocation that started the daemon
 
@@ -93,7 +93,7 @@ def _bridge_to_observer(project_dir: str) -> None:
         try:
             os.kill(daemon_pid, signal.SIGUSR1)
             learnings_state.reset_counter(paths["counter_file"])
-        except (ProcessLookupError, PermissionError, OSError):
+        except ProcessLookupError, PermissionError, OSError:
             pass
 
 
@@ -104,7 +104,7 @@ def main() -> None:
         if not raw.strip():
             return
         data = json.loads(raw)
-    except (json.JSONDecodeError, IOError):
+    except json.JSONDecodeError, IOError:
         return
 
     # Extract fields from Claude Code hook format
@@ -142,7 +142,7 @@ def main() -> None:
                 )
                 if result.returncode == 0:
                     project_dir = result.stdout.strip()
-            except (subprocess.TimeoutExpired, FileNotFoundError):
+            except subprocess.TimeoutExpired, FileNotFoundError:
                 pass
 
     if not project_dir:
@@ -207,7 +207,7 @@ def main() -> None:
             # Touch purge marker
             with open(purge_marker, "w") as f:
                 f.write("")
-        except (IOError, OSError):
+        except IOError, OSError:
             pass
 
 

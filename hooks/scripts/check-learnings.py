@@ -18,7 +18,9 @@ Exit: always 0 (errors communicated via STATUS line).
 
 import sys
 import os
-from datetime import datetime, timezone, timedelta
+from collections.abc import Mapping
+from datetime import date, datetime, timezone, timedelta
+from typing import Any
 
 
 # Corruption signature thresholds (see issues.md "Corruption Signatures")
@@ -30,7 +32,9 @@ MONOTONE_GROWTH_DAYS = (
 STALE_LEARNING_DAYS = 90  # last_validated older than this flags as stale
 
 
-def _parse_frontmatter(filepath: str, yaml_module) -> tuple[dict, str] | None:
+def _parse_frontmatter(
+    filepath: str, yaml_module: Any
+) -> tuple[Mapping[str, object], str] | None:
     """Return (frontmatter_dict, body_text) or None on failure."""
     try:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -54,7 +58,7 @@ def _parse_frontmatter(filepath: str, yaml_module) -> tuple[dict, str] | None:
 
 
 def _compute_corruption_signatures(
-    learnings_dir: str, yaml_module
+    learnings_dir: str, yaml_module: Any
 ) -> list[tuple[str, str]]:
     """
     Scan .learnings/*.md and compute corruption signatures.
@@ -144,32 +148,33 @@ def _compute_corruption_signatures(
     return signatures
 
 
-def _is_within_window(date_value: object, cutoff_date: object) -> bool:
+def _coerce_date(date_value: object) -> date | None:
+    if isinstance(date_value, date) and not isinstance(date_value, datetime):
+        return date_value
+    if isinstance(date_value, datetime):
+        return date_value.date()
+    if isinstance(date_value, str):
+        try:
+            return datetime.strptime(date_value, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+    return None
+
+
+def _is_within_window(date_value: object, cutoff_date: date) -> bool:
     """True if date_value (YYYY-MM-DD or date obj) is on or after cutoff_date."""
-    if date_value is None:
+    parsed_date = _coerce_date(date_value)
+    if parsed_date is None:
         return False
-    try:
-        if isinstance(date_value, str):
-            d = datetime.strptime(date_value, "%Y-%m-%d").date()
-        else:
-            d = date_value
-        return d >= cutoff_date
-    except (ValueError, TypeError):
-        return False
+    return parsed_date >= cutoff_date
 
 
-def _is_before(date_value: object, cutoff_date: object) -> bool:
+def _is_before(date_value: object, cutoff_date: date) -> bool:
     """True if date_value is strictly before cutoff_date."""
-    if date_value is None:
-        return True  # missing last_validated = treat as stale
-    try:
-        if isinstance(date_value, str):
-            d = datetime.strptime(date_value, "%Y-%m-%d").date()
-        else:
-            d = date_value
-        return d < cutoff_date
-    except (ValueError, TypeError):
-        return True
+    parsed_date = _coerce_date(date_value)
+    if parsed_date is None:
+        return True  # missing or invalid last_validated = treat as stale
+    return parsed_date < cutoff_date
 
 
 def main() -> None:
