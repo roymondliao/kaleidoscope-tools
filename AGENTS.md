@@ -10,7 +10,7 @@ These are **mandatory execution constraints**, not suggestions. Do NOT invent wo
    ```
    $uv run pytest <test_file_or_directory>
    ```
-4. **MUST** run `pre-commit` for code formatting and linting before committing. Can skip `mypy` check by adding `--no-verify` to the commit command.
+4. **MUST** run `pre-commit` for code formatting and linting before committing.
 
 ## Infrastructure
 
