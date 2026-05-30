@@ -9,8 +9,8 @@ This guide explains the metadata fields required when creating Jira issues.
 - **Format**: Project name
 - **How to obtain**:
   - Use `mcp__mcp-atlassian__jira_get_all_projects` to list available projects
-  - Check the project key from the issue keys (e.g., `VIC-123` → project key is `VIC`)
-- **Example**: `VIC`
+  - Check the project key from the issue keys (e.g., `<issue_key>` → project key is `<project_key>`)
+- **Example**: `<project_key>`
 
 ### summary
 - **Description**: The issue title/headline
@@ -47,7 +47,7 @@ This guide explains the metadata fields required when creating Jira issues.
   - From existing issue: Check the `reporter` or `assignee` field which contains `accountId`
 - **Examples**:
   - Account ID: `712020:bcc95996-28a7-4346-8ad3-cbb480f3cc1d` (recommended)
-  - Email: `yuyu_liao@vicone.com`
+  - Email: `<assignee_email>`
 - **Note**: If not specified or invalid, issue will be created as "Unassigned". Account ID format is more reliable than email.
 
 ### description
@@ -64,8 +64,8 @@ This guide explains the metadata fields required when creating Jira issues.
 - **Data Type**: `string` (comma-separated for multiple)
 - **Parameter**: Direct parameter in `jira_create_issue`
 - **Examples**:
-  - Single: `"xNexus"`
-  - Multiple: `"xNexus,API,Frontend"`
+  - Single: `"<component_name>"`
+  - Multiple: `"<component_name>,API,Frontend"`
 - **How to verify**: Check existing issues in the project to see available components
 - **Note**: Components must exist in the project before use
 
@@ -75,7 +75,7 @@ This guide explains the metadata fields required when creating Jira issues.
 - **Parameter**: Via `additional_fields`
 - **Format**: `{"labels": ["label1", "label2"]}`
 - **Examples**:
-  - `{"labels": ["AI-Squad"]}`
+  - `{"labels": ["<label_name>"]}`
   - `{"labels": ["infrastructure", "poc", "urgent"]}`
 - **Best practices**:
   - Use existing labels when possible
@@ -118,7 +118,7 @@ This guide explains the metadata fields required when creating Jira issues.
 - **Custom Field ID**: `customfield_10020` (may vary by Jira instance)
 - **Format**: `{"customfield_10020": <sprint_id>}`
 - **How to obtain Sprint ID**:
-  1. Find the board ID: `mcp__mcp-atlassian__jira_get_agile_boards(project_key="VIC")`
+  1. Find the board ID: `mcp__mcp-atlassian__jira_get_agile_boards(project_key="<project_key>")`
   2. Get sprints from board: `mcp__mcp-atlassian__jira_get_sprints_from_board(board_id="14", state="future")`
   3. Use the `id` field from the sprint object (e.g., `10248`)
 - **Example**:
@@ -175,14 +175,14 @@ Recommended: assignee, components
 
 | Field | Data Type | Parameter Location | Example |
 |-------|-----------|-------------------|---------|
-| `project_key` | `string` | Direct param | `"VIC"` |
+| `project_key` | `string` | Direct param | `"<project_key>"` |
 | `summary` | `string` | Direct param | `"Issue title"` |
 | `issue_type` | `string` | Direct param | `"Task"` |
 | `assignee` | `string` (Account ID) | Direct param | `"712020:bcc95996-28a7-4346-8ad3-cbb480f3cc1d"` |
 | `description` | `string` (Markdown) | Direct param | `"## Why\n..."` |
-| `components` | `string` (comma-separated) | Direct param | `"xNexus,API"` |
-| `labels` | `array of strings` | `additional_fields` | `{"labels": ["AI-Squad"]}` |
-| `parent` | `string` (Issue key) | `additional_fields` | `{"parent": "VIC-123"}` |
+| `components` | `string` (comma-separated) | Direct param | `"<component_name>,API"` |
+| `labels` | `array of strings` | `additional_fields` | `{"labels": ["<label_name>"]}` |
+| `parent` | `string` (Issue key) | `additional_fields` | `{"parent": "<issue_key>"}` |
 | `priority` | `object` | `additional_fields` | `{"priority": {"name": "P1"}}` |
 | `sprint` | `number` (Sprint ID) | `additional_fields` | `{"customfield_10020": 10248}` |
 | `fixVersions` | `array of objects` | `additional_fields` | `{"fixVersions": [{"id": "10020"}]}` |
@@ -191,15 +191,15 @@ Recommended: assignee, components
 
 ```json
 {
-  "project_key": "VIC",
+  "project_key": "<project_key>",
   "summary": "Compare vLLM and SGLang performance",
   "issue_type": "Task",
   "assignee": "712020:bcc95996-28a7-4346-8ad3-cbb480f3cc1d",
   "description": "## Objective\nBenchmark inference engines...",
-  "components": "xNexus",
+  "components": "<component_name>",
   "additional_fields": {
-    "parent": "VIC-23678",
-    "labels": ["AI-Squad", "infrastructure"],
+    "parent": "<issue_key>",
+    "labels": ["<label_name>", "infrastructure"],
     "customfield_10020": 10248,
     "priority": {"name": "P2"}
   }

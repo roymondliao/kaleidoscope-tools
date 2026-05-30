@@ -37,6 +37,26 @@ Use this skill when the user:
 
 Follow these steps in order to create a Jira issue:
 
+### Step 0: Load Configuration Defaults
+
+Before doing anything else, read the `config.yaml` file located in the same directory as this skill (`<skill-dir>/config.yaml`). Parse it as YAML and use its values as **default metadata** throughout the workflow.
+
+**Expected fields in config.yaml:**
+```yaml
+Project: <project_key>           # → project_key default
+Assignee: <assignee_name>    # → assignee default (display name, will be resolved to account ID later)
+Components: <component_name>     # → components default
+Labels: <label_name>       # → labels default (single value or list)
+```
+
+**Rules for using config values:**
+- Treat every field in config as a **pre-filled default**, not a hard-coded value
+- Fields present in config: use the value, but still show it to the user in the review step so they can override it
+- Fields absent from config: always ask the user explicitly
+- Dynamic context-dependent fields (`issue_type`, `summary`, `parent`) are **never** stored in config — always gather them from context or ask
+
+**If config.yaml is missing or unreadable:** proceed without defaults and collect all metadata from the user normally.
+
 ### Step 1: Requirements Gathering and Research
 
 Understand what the user wants to create and collect initial information.
@@ -48,14 +68,14 @@ Understand what the user wants to create and collect initial information.
 4. If helpful, check whether web research tools are available (e.g., `search_web`, `read_url_content`). If available and needed, perform a web search and read relevant sources.
 
 **Collect metadata during this phase:**
-- `project_key` - Which Jira project? (e.g., "VIC board" → project_key: `VIC`)
+- `project_key` - Which Jira project? (e.g., "<project_key> board" → project_key: `<project_key>`)
 - `issue_type` - What type of issue? (Epic, Story, Task, Bug)
 - `assignee` - Who will work on this?
 - `components` - Which component(s) does this relate to?
 - `labels` - Any relevant tags? (will be passed via `additional_fields.labels` as a list of strings)
 
 **Note on metadata collection:**
-- User requests often contain implicit metadata (e.g., "open an Epic in VIC" provides both issue_type and project_key)
+- User requests often contain implicit metadata (e.g., "open an Epic in <project_key>" provides both issue_type and project_key)
 - Extract what's provided and only ask for missing required fields
 - See `references/metadata-guide.md` for detailed metadata information
 
@@ -111,7 +131,7 @@ Present the draft to the user for review before creating the issue.
 **What to present:**
 1. Issue summary (title)
 2. Full description (Why/What/Scope/Out of Scope)
-3. All metadata that will be used (project_key, issue_type, assignee, components, labels, etc.)
+3. All metadata that will be used — clearly indicate which values came from `config.yaml` (e.g., mark them with `(from config)`) so the user knows what was auto-filled and can spot anything to override
 
 **Use AskUserQuestion tool for approval:**
 After presenting the draft content, use the AskUserQuestion tool to get user decision:
@@ -149,52 +169,46 @@ After presenting the draft content, use the AskUserQuestion tool to get user dec
 
 ### Step 4: Collect and Validate Metadata
 
-Before creating the issue, collect and validate the required metadata from the user.
+Before creating the issue, finalize all required metadata. Use config defaults where available — only ask the user for fields that are missing or that are inherently context-dependent.
 
-**Required metadata to collect:**
-- `project_key` - Project identifier (e.g., `VIC`)
-- `summary` - Issue title (from Step 2)
-- `issue_type` - Type of issue (e.g., `Epic`, `Story`, `Task`, `Bug`)
-- `assignee` - Person responsible (name, email, or account ID)
-- `components` - Component name(s)
+**Field resolution priority (highest → lowest):**
+1. Explicitly stated in the user's request (e.g., "assign to Alice")
+2. Loaded from `config.yaml` in Step 0
+3. Ask the user
 
-**Use AskUserQuestion tool to collect metadata:**
+**Fields that always require asking (never stored in config):**
+- `issue_type` — depends on the nature of the work (Epic, Story, Task, Bug, Subtask)
+- `summary` — the issue title, always derived from context
+- `parent` — for Subtasks/child issues, depends on context
+
+**Fields that use config defaults (ask only if absent from config):**
+- `project_key`
+- `assignee`
+- `components`
+- `labels`
+
+**When using AskUserQuestion, surface config defaults as the first (recommended) option:**
+
+Example — if `config.yaml` provides `Assignee: <assignee_name>` and `Components: <component_name>`:
 ```json
 {
   "questions": [
     {
-      "question": "Which Jira project should this issue be created in?",
-      "header": "Project",
+      "question": "What type of issue is this?",
+      "header": "Issue Type",
       "options": [
-        {"label": "VIC", "description": "VIC board"},
-        {"label": "AIML", "description": "AIML board"},
-        {"label": "Other", "description": "Specify another project key"}
-      ],
-      "multiSelect": false
-    },
-    {
-      "question": "Who should be assigned to this issue?",
-      "header": "Assignee",
-      "options": [
-        {"label": "yuyu_liao", "description": "Assign to yuyu_liao"},
-        {"label": "Unassigned", "description": "Leave unassigned"},
-        {"label": "Other", "description": "Specify another person"}
-      ],
-      "multiSelect": false
-    },
-    {
-      "question": "Which component does this issue belong to?",
-      "header": "Component",
-      "options": [
-        {"label": "xNexus", "description": "xNexus component"},
-        {"label": "None", "description": "No component"},
-        {"label": "Other", "description": "Specify another component"}
+        {"label": "Task", "description": "A concrete piece of work"},
+        {"label": "Story", "description": "A user-facing feature"},
+        {"label": "Bug", "description": "Something broken"},
+        {"label": "Epic", "description": "A large body of work"}
       ],
       "multiSelect": false
     }
   ]
 }
 ```
+
+If `project_key` is missing from config, add a project question. If `assignee` is missing, add an assignee question. Only include questions for truly missing fields — don't ask for what you already know.
 
 **Resolve assignee to account ID:**
 
@@ -205,54 +219,62 @@ Jira Cloud requires the account ID format (e.g., `XXXXXX:xxxxxxxx-xxxx-xxxx-xxxx
    ```text
    mcp__mcp-atlassian__confluence_search_user
    {
-     "query": "user.fullname ~ \"Yuyu Liao\""
+     "query": "user.fullname ~ \"<assignee_name>\""
    }
    ```
    Or for email:
    ```text
    mcp__mcp-atlassian__confluence_search_user
    {
-     "query": "user.fullname ~ \"yuyu_liao\""
+     "query": "user.fullname ~ \"<assignee_username>\""
    }
    ```
 3. Extract the `account_id` from the search result
 4. Use the resolved account ID for the `assignee` parameter
 
 **Example resolution flow:**
-- User provides: `yuyu_liao` or `Yuyu Liao` or `yuyu_liao@vicone.com`
+- User provides: `<assignee_username>` or `<assignee_name>` or `<assignee_email>`
 - Search via Confluence → Returns `account_id: <account_id>`
 - Use this account ID when creating the issue
 
 ### Step 5: Create the Issue
 
-Use MCP Atlassian tools to create the issue in Jira with the validated metadata from Step 4.
+Creating the issue uses a **two-step process** to ensure the description renders correctly in Jira. Passing description directly to `jira_create_issue` causes newlines to be mishandled — `* bullet` items get converted to `_ italic _` markers. Setting the description via `jira_update_issue` after creation avoids this entirely.
 
-**Tool:** `mcp__mcp-atlassian__jira_create_issue`
+**Step 5a — Create the issue skeleton (no description yet):**
 
-**Parameters:**
-- `project_key` - From Step 4
-- `summary` - Issue title from Step 2
-- `issue_type` - From Step 4
-- `assignee` - Resolved account ID from Step 4
-- `description` - Full description from Step 2 (markdown format)
-- `components` - From Step 4
-- `additional_fields` - Dictionary for priority, labels, parent, etc.
-
-**Example call:**
 ```text
 mcp__mcp-atlassian__jira_create_issue
 {
-  "project_key": "VIC",
+  "project_key": "<project_key>",
   "summary": "Self-Hosted LLM Serving Infrastructure",
   "issue_type": "Epic",
   "assignee": "<account_id>",
-  "description": "## Why\n- Reduce costs...",
-  "components": "xNexus",
+  "components": "<component_name>",
   "additional_fields": {
-    "labels": ["infrastructure", "poc"]
+    "labels": ["infrastructure", "poc"],
+    "parent": "<issue_key>"   ← include if subtask/child
   }
 }
 ```
+
+Note the absence of `description` here — intentional.
+
+**Step 5b — Set the description via update (immediately after Step 5a):**
+
+Extract the `issue_key` from the creation response, then call:
+
+```text
+mcp__mcp-atlassian__jira_update_issue
+{
+  "issue_key": "<issue_key>",
+  "fields": {
+    "description": "h3. Why\n\n* reason one\n* reason two\n\nh3. What\n\n..."
+  }
+}
+```
+
+Passing description through the `fields` dict preserves newlines correctly, so Jira wiki markup (`h3.`, `*`, `[ ]`) renders as intended.
 
 ### Step 6: Verify and Report Results
 
@@ -268,14 +290,14 @@ If any fields need explicit verification (e.g., assignee status), use:
 ```text
 mcp__mcp-atlassian__jira_get_issue
 {
-  "issue_key": "VIC-12345",
+  "issue_key": "<issue_key>",
   "fields": "assignee,components,status"
 }
 ```
 
 **Report to user:**
 Present the following information:
-1. **Issue Key** (e.g., VIC-12345)
+1. **Issue Key** (e.g., <issue_key>)
 2. **Issue URL** (direct link to view in Jira)
 3. **Key fields confirmation:**
    - Status
@@ -290,11 +312,11 @@ Present the following information:
 ✅ Issue created successfully!
 
 **Issue Details:**
-- Issue Key: VIC-12345
-- URL: https://yourorg.atlassian.net/browse/VIC-12345
+- Issue Key: <issue_key>
+- URL: https://yourorg.atlassian.net/browse/<issue_key>
 - Status: TO DO
 - Issue Type: Epic
-- Components: xNexus ✓
+- Components: <component_name> ✓
 - Assignee: [Status]
 
 [Any additional notes or warnings]
@@ -304,7 +326,7 @@ Present the following information:
 
 1. **Always collect metadata early**: Ask for project_key, issue_type, and other metadata during Step 1 to avoid back-and-forth
 
-2. **Extract implicit information**: Users often provide metadata in their request (e.g., "create an Epic in VIC" → issue_type=Epic, project_key=VIC)
+2. **Extract implicit information**: Users often provide metadata in their request (e.g., "create an Epic in <project_key>" → issue_type=Epic, project_key=<project_key>)
 
 3. **Use the description template**: Structured descriptions improve communication and tracking
 

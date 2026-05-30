@@ -1,0 +1,29 @@
+type: fast_track
+description: "Replace create-jira-issue PII examples with placeholders, keep local Jira defaults out of version control, and bump plugin metadata to 1.7.0."
+death_clause: "If the create-jira-issue skill still contains the requested PII literals or root plugin metadata still reports the previous version, this change is considered failed."
+acceptance:
+  - "skills/create-jira-issue documentation uses placeholder values instead of organization/user-specific examples."
+  - "skills/create-jira-issue/config.yaml can hold local default values without being committed."
+  - "A targeted scan finds no requested PII literals under skills/create-jira-issue."
+  - "Root plugin metadata reports version 1.7.0."
+scar_tag: none
+scar_items: []
+files_changed:
+  - ".claude-plugin/marketplace.json"
+  - ".claude-plugin/plugin.json"
+  - ".gitignore"
+  - "skills/create-jira-issue/SKILL.md"
+  - "skills/create-jira-issue/references/metadata-guide.md"
+quality_checklist:
+  - criterion: "C5 Reuse"
+    checked: true
+    note: "No new helper logic was introduced; the change only updates docs and ignore rules."
+  - criterion: "C6 Clear Structure"
+    checked: true
+    note: "Config defaults remain documented in the Jira skill, while the local config file is ignored at the repository boundary."
+  - criterion: "C7 Elegant Logic"
+    checked: true
+    note: "The placeholder replacement avoids adding parsing or templating behavior that the skill does not need."
+  - criterion: "C8 No Redundancy"
+    checked: true
+    note: "The same placeholder naming is used consistently across the skill and metadata guide."

@@ -159,6 +159,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Local skill defaults that may contain Jira/user metadata.
+skills/create-jira-issue/config.yaml
+
 # Spyder project settings
 .spyderproject
 .spyproject
