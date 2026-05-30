@@ -1,0 +1,27 @@
+task_id: task-1
+completion_status: done_with_concerns
+
+known_shortcuts:
+  - description: "Death tests were performed as contract inspection rather than executable tests because the deliverable is a Claude Code agent Markdown artifact."
+    deferred_to_feature_iteration: false
+
+silent_failure_conditions:
+  - description: "The agent output schema may still be interpreted loosely by future model versions because it is natural-language Markdown rather than a machine-enforced schema."
+    deferred_to_feature_iteration: true
+
+assumptions_made:
+  - assumption: "Claude Code recognizes the new root-level agents/code-reviewer.md file using the same conventions as existing agent files."
+    verified: true
+    note: "Existing root-level agents such as agents/analytical-critic.md and agents/pragmatic-critic.md use the same frontmatter style."
+  - assumption: "The generic reviewer can cover v1 review needs without specialist roles."
+    verified: false
+    note: "User selected generic reviewer in pre-thinking; effectiveness requires dry-run evaluator validation."
+    deferred_to_feature_iteration: true
+
+debt_registered: true
+debt_location: "agents/code-reviewer.md — natural-language schema enforcement"
+
+resolved_items:
+  - original_section: "silent_failure_conditions"
+    original_description: "Subagent may review without PR intent if the coordinator gives an incomplete task."
+    resolution: "Added explicit malformed_input behavior when PR Intent is missing and required input contract lists PR Intent as mandatory."

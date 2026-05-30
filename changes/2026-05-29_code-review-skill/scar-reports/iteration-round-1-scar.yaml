@@ -1,0 +1,39 @@
+task_id: iteration-round-1
+completion_status: done_with_concerns
+
+known_shortcuts:
+  - description: "Iteration added an artifact checker but did not convert the full code-review skill workflow into an executable end-to-end harness."
+    deferred_to_feature_iteration: true
+  - description: "Fixture verification used gh pr view metadata only; it did not execute the full /code-review dry-run workflow because this repository cannot directly invoke Claude Code skills as tests."
+    deferred_to_feature_iteration: true
+
+silent_failure_conditions:
+  - description: "The checker verifies required artifact text patterns, but a future executor could still satisfy the text contract while performing a weak actual review."
+    deferred_to_feature_iteration: true
+  - description: "Live GitHub POST behavior remains unverified by design because the evaluator fixture is merged and must not receive comments."
+    deferred_to_feature_iteration: true
+
+assumptions_made:
+  - assumption: "scripts/verify-code-review-artifacts.sh is sufficient as a first executable guard for the Markdown skill and agent contracts."
+    verified: true
+    note: "The script was run locally and passed."
+  - assumption: "The closed PR fixture exposes the metadata fields required by the evaluator."
+    verified: true
+    note: "gh pr view returned number, url, title, body, state, baseRefName, headRefName, headRefOid, commits, files, labels, and author on 2026-05-30."
+
+debt_registered: true
+debt_location: "scripts/verify-code-review-artifacts.sh and changes/2026-05-29_code-review-skill/evaluator.md"
+
+resolved_items:
+  - original_section: "known_shortcuts"
+    original_description: "Death tests were validated by artifact inspection instead of automated checks."
+    resolution: "Added scripts/verify-code-review-artifacts.sh and ran it successfully."
+  - original_section: "assumptions_made"
+    original_description: "gh pr view JSON fields used by the skill are available in the target GitHub CLI version."
+    resolution: "Verified the closed PR fixture with gh pr view and recorded the returned metadata in fixture-verification.md."
+  - original_section: "assumptions_made"
+    original_description: "The closed PR remains accessible through gh in the target environment."
+    resolution: "Verified access to the fixture PR through gh pr view on 2026-05-30."
+  - original_section: "assumptions_made"
+    original_description: "The PR URL or gh metadata is sufficient to derive owner, repo, and pull number reliably."
+    resolution: "Added explicit endpoint coordinate extraction and ambiguity stop rules to the skill and payload template."

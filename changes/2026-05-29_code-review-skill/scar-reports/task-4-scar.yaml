@@ -1,0 +1,32 @@
+task_id: task-4
+completion_status: done_with_concerns
+
+known_shortcuts:
+  - description: "The evaluator is documented but not executed against the closed PR in this implementation pass."
+    deferred_to_feature_iteration: true
+  - description: "README discoverability was updated in existing tables only; no marketplace/plugin metadata was added."
+    deferred_to_feature_iteration: false
+
+silent_failure_conditions:
+  - description: "The closed PR fixture may become inaccessible or insufficient for future dry-run validation, causing evaluator failure unrelated to the skill artifacts."
+    deferred_to_feature_iteration: true
+
+assumptions_made:
+  - assumption: "README.md skill and agent tables are the canonical discovery surface for this repository."
+    verified: true
+    note: "Existing README has explicit Skills and Agents tables."
+  - assumption: "The closed PR remains accessible through gh in the target environment."
+    verified: false
+    note: "Not verified because executing the external gh evaluator would require network/auth access."
+    deferred_to_feature_iteration: true
+
+debt_registered: true
+debt_location: "changes/2026-05-29_code-review-skill/evaluator.md — fixture availability and unexecuted dry-run"
+
+resolved_items:
+  - original_section: "silent_failure_conditions"
+    original_description: "Evaluator instructions allow actual posting against the closed PR."
+    resolution: "Evaluator requires --dry-run, posting_executed: false, and treats any posting attempt as failure."
+  - original_section: "known_shortcuts"
+    original_description: "README lists the skill but not the subagent."
+    resolution: "README now lists both code-review skill and code-reviewer agent."

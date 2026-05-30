@@ -1,0 +1,35 @@
+task_id: task-3
+completion_status: done_with_concerns
+
+known_shortcuts:
+  - description: "Payload validation is specified as workflow instructions rather than enforced by a helper script."
+    deferred_to_feature_iteration: true
+  - description: "The gh api command uses form fields in documentation but has not been executed against a fixture."
+    deferred_to_feature_iteration: true
+
+silent_failure_conditions:
+  - description: "A future executor could misread user agreement with findings as approval to post, despite the skill requiring posting-specific approval."
+    deferred_to_feature_iteration: true
+  - description: "Diff-line verification remains manual/procedural; a reviewer could select a line that exists in the file but not in the PR diff hunk."
+    deferred_to_feature_iteration: true
+
+assumptions_made:
+  - assumption: "The requested independent comment endpoint accepts body, commit_id, path, line, and side as form fields via gh api."
+    verified: false
+    note: "The endpoint and fields were checked during research, but the command was not executed in this repo."
+    deferred_to_feature_iteration: true
+  - assumption: "The PR URL or gh metadata is sufficient to derive owner, repo, and pull number reliably."
+    verified: false
+    note: "The skill documents both sources but does not include an executable parser."
+    deferred_to_feature_iteration: true
+
+debt_registered: true
+debt_location: "skills/code-review/SKILL.md Step 9 and reference/comment-payload-template.md"
+
+resolved_items:
+  - original_section: "silent_failure_conditions"
+    original_description: "Dry-run could accidentally post public comments."
+    resolution: "Added explicit dry-run behavior requiring posting_executed: false and prohibiting gh api execution."
+  - original_section: "known_shortcuts"
+    original_description: "Invalid payloads could look approved."
+    resolution: "Added required field and diff-line validation rules, plus a Blocked Payloads section that must not be posted."

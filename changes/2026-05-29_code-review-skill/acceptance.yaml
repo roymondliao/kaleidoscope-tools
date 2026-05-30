@@ -1,0 +1,93 @@
+feature: code-review-skill
+coverage_type: verified
+
+scenarios:
+  # --- Death paths first ---
+
+  - name: "Silent failure - review runs on wrong checkout"
+    type: death_path
+    given: "A user provides a PR URL and the local repository is currently on another branch"
+    when: "The skill checks out or fetches the PR branch"
+    then:
+      - "The workflow must compare local HEAD to the PR head SHA before review"
+      - "Checkout state must be exactly one of: success, failure, unknown"
+      - "unknown must stop review and report the ambiguous checkout state"
+      - "The skill must never continue reviewing the previous branch as if it were the PR"
+
+  - name: "Silent failure - subagent reviews without PR intent"
+    type: death_path
+    given: "The PR has title, description, commits, changed files, and diff context"
+    when: "The main skill constructs a code-reviewer subagent task"
+    then:
+      - "The task must include project information, PR information, PR intent, assigned files, relevant diff context, and review objective"
+      - "The task must state whether broad tests/ reconnaissance was excluded and whether changed test files are assigned"
+      - "A task missing PR intent must be treated as malformed, not dispatched"
+
+  - name: "Silent failure - dry-run creates GitHub side effects"
+    type: death_path
+    given: "The evaluator runs against closed PR fixture https://github.com/OWNER/REPO/pull/123"
+    when: "The workflow reaches the comment posting phase"
+    then:
+      - "Dry-run mode must output proposed independent line comment payloads only"
+      - "Dry-run mode must not execute gh api POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"
+      - "Any attempt to post during dry-run is a failure"
+
+  - name: "Silent failure - invalid line comment payload looks approved"
+    type: death_path
+    given: "The user approves a finding for posting"
+    when: "The skill prepares an independent line comment payload"
+    then:
+      - "Each payload must include commit_id, path, line, side, and markdown body"
+      - "side must be RIGHT or LEFT"
+      - "line must be tied to PR diff evidence for the selected path"
+      - "Payloads with unknown or unverified line mapping must not be posted"
+
+  # --- Degradation paths ---
+
+  - name: "Degradation - project reconnaissance is incomplete"
+    type: degradation
+    given: "The repository is too large, sparse, or unreadable for full bounded project reconnaissance"
+    when: "The skill builds project information"
+    then:
+      - "The project information must mark degraded_mode: true"
+      - "The output must include degradation_reason"
+      - "Subagent tasks must receive the degraded context marker instead of a false full-project summary"
+
+  - name: "Degradation - changed tests exist"
+    type: degradation
+    given: "The PR modifies files under tests/"
+    when: "The main skill groups changed files"
+    then:
+      - "Broad project reconnaissance must still skip tests/"
+      - "Changed test files must be allowed as targeted review inputs when relevant"
+      - "The review unit must state whether test files are reviewed for findings or only used as context"
+
+  - name: "Unknown outcome - comment posting result ambiguous"
+    type: degradation
+    given: "The user approved one or more comment payloads for live posting"
+    when: "gh api returns timeout, truncated output, or partial failure"
+    then:
+      - "Posting result must be marked unknown"
+      - "The skill must report which payloads have unknown status"
+      - "The skill must not retry blindly"
+
+  # --- Happy paths with evidence ---
+
+  - name: "Success - closed PR dry-run review produces review pipeline evidence"
+    type: happy_path
+    given: "Closed PR fixture https://github.com/OWNER/REPO/pull/123 is used as the evaluator fixture"
+    when: "The completed code-review skill runs in dry-run mode"
+    then:
+      - "Output includes project information, PR information, PR intent, changed-file review groups, and subagent task prompts"
+      - "Output includes consolidated findings or an explicit no-findings result"
+      - "Every proposed comment payload includes commit_id, path, line, side, and markdown body"
+      - "The evidence chain can reconstruct why each review group and payload was produced"
+
+  - name: "Success - live approved independent comments are posted"
+    type: happy_path
+    given: "The user has explicitly approved specific validated payloads for a live open PR"
+    when: "The skill posts comments"
+    then:
+      - "The skill uses gh api POST /repos/{owner}/{repo}/pulls/{pull_number}/comments for each approved independent line comment"
+      - "Only approved payloads are posted"
+      - "The result reports success, failure, or unknown for each payload"

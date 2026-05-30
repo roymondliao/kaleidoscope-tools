@@ -1,0 +1,35 @@
+task_id: task-2
+completion_status: done_with_concerns
+
+known_shortcuts:
+  - description: "The skill defines review-unit grouping heuristics in prose rather than an executable grouping algorithm."
+    deferred_to_feature_iteration: true
+  - description: "Death tests were validated by artifact inspection instead of automated checks."
+    deferred_to_feature_iteration: false
+
+silent_failure_conditions:
+  - description: "A future agent may run the skill but skip the explicit HEAD SHA comparison if it treats the instructions as advisory."
+    deferred_to_feature_iteration: true
+  - description: "Project reconnaissance quality depends on the reviewing agent's judgment because the file selection is bounded by guidelines, not a script."
+    deferred_to_feature_iteration: true
+
+assumptions_made:
+  - assumption: "Claude Code skill frontmatter accepts Task in allowed-tools for subagent dispatch."
+    verified: false
+    note: "Existing skills in this repo do not show a local Task example; the workflow still documents the required subagent task contract."
+    deferred_to_feature_iteration: true
+  - assumption: "gh pr view JSON fields used by the skill are available in the target GitHub CLI version."
+    verified: false
+    note: "Not verified locally against the fixture PR during this task."
+    deferred_to_feature_iteration: true
+
+debt_registered: true
+debt_location: "skills/code-review/SKILL.md — prose workflow enforcement and gh JSON field assumptions"
+
+resolved_items:
+  - original_section: "known_shortcuts"
+    original_description: "Treating gh pr checkout output as proof of checkout state."
+    resolution: "The skill requires git rev-parse HEAD after checkout and compares it to PR headRefOid before reading changed files."
+  - original_section: "silent_failure_conditions"
+    original_description: "Subagent tasks could be dispatched without PR intent."
+    resolution: "The skill validates Project Information, PR Information, PR Intent, Assigned Review Unit, Test Scope Boundary, and Output Requirements before dispatch."

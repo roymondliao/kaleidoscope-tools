@@ -1,0 +1,31 @@
+feature: code-review-skill
+status: done
+
+tasks:
+  - id: task-1
+    title: "Generic code-reviewer subagent"
+    status: done_with_concerns
+    scar_count: 4
+    unresolved_assumptions: 1
+    depends_on: []
+
+  - id: task-2
+    title: "Main code-review skill workflow"
+    status: done_with_concerns
+    scar_count: 6
+    unresolved_assumptions: 2
+    depends_on: [task-1]
+
+  - id: task-3
+    title: "Comment payload validation and posting safety"
+    status: done_with_concerns
+    scar_count: 6
+    unresolved_assumptions: 2
+    depends_on: [task-2]
+
+  - id: task-4
+    title: "Documentation and dry-run evaluator"
+    status: done_with_concerns
+    scar_count: 5
+    unresolved_assumptions: 1
+    depends_on: [task-3]

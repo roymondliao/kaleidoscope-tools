@@ -54,6 +54,7 @@ Standalone skills that can be used across projects.
 | `deliberate-consensus` | Structured deliberation with stance generation, cross-examination, and arbitration |
 | `deep-reading-analyst` | Deep analysis of user-provided links with structured insights |
 | `browser-qa` | Automated QA testing for web platforms using chrome-devtools-mcp |
+| `code-review` | Review GitHub PRs from URL with project reconnaissance, subagent review, and approved line-comment payloads |
 | `create-jira-issue` | Systematic requirements gathering for Jira issue creation |
 | `context-sentinel-check` | Verify agent context retention; auto-compact if lost |
 | `zettelkasten-coach` | Transform literature into Zettelkasten permanent notes |
@@ -68,6 +69,7 @@ Specialized sub-agents for targeted tasks.
 | `ai-research` | AI Research Educator & Systems Architect with Python/DevOps expertise |
 | `analytical-critic` | Evaluates technical correctness and logical consistency |
 | `arbiter` | Produces final ruling by comparing arguments and unresolved risks |
+| `code-reviewer` | Reviews one coherent PR change unit with project context, PR intent, assigned files, and diff evidence |
 | `pragmatic-critic` | Evaluates delivery realism, maintainability, and adoption burden |
 | `risk-critic` | Evaluates safety, failure modes, and operational risk |
 
@@ -95,6 +97,14 @@ Then enable individual plugins via `enabledPlugins`.
 - Claude Code CLI
 - `jq` (for shell-based hooks and scripts)
 - `bc` (for quota calculations)
+
+## Verification
+
+Run code-review skill artifact checks:
+
+```bash
+scripts/verify-code-review-artifacts.sh
+```
 
 ## License
 
