@@ -17,7 +17,7 @@ require_pattern() {
   local file="$1"
   local pattern="$2"
   local message="$3"
-  if ! grep -Eq "$pattern" "$ROOT_DIR/$file"; then
+  if ! grep -Eq -- "$pattern" "$ROOT_DIR/$file"; then
     printf 'FAIL %s: %s\n' "$file" "$message"
     failures=$((failures + 1))
   fi
@@ -49,6 +49,8 @@ require_pattern "skills/code-review/SKILL.md" 'posting_executed: false' "skill m
 require_pattern "skills/code-review/SKILL.md" 'Do not infer approval' "skill must require posting-specific approval"
 require_pattern "skills/code-review/SKILL.md" 'https://github.com/\{owner\}/\{repo\}/pull/\{number\}' "skill must define PR URL parsing pattern"
 require_pattern "skills/code-review/SKILL.md" 'If owner, repo, or pull number cannot be determined unambiguously' "skill must block ambiguous endpoint coordinates"
+require_pattern "skills/code-review/SKILL.md" 'Do not inline markdown `body`' "skill must avoid shell-inlining untrusted comment body"
+require_pattern "skills/code-review/SKILL.md" '--input <payload-json-file>' "skill must post from JSON input file"
 
 for field in commit_id path line side body; do
   require_pattern "skills/code-review/reference/comment-payload-template.md" "$field" "payload template must include $field"
@@ -60,6 +62,7 @@ require_pattern "changes/2026-05-29_code-review-skill/evaluator.md" 'posting_exe
 require_pattern "changes/2026-05-29_code-review-skill/evaluator.md" 'Subagent Task Prompt Evidence' "evaluator must require subagent task prompt evidence"
 require_pattern "changes/2026-05-29_code-review-skill/evaluator.md" 'gh api POST /repos/\{owner\}/\{repo\}/pulls/\{pull_number\}/comments' "evaluator must fail if posting command runs"
 require_pattern "changes/2026-05-29_code-review-skill/fixture-verification.md" 'headRefOid: "<fixture-head-sha>"' "fixture verification template must record PR head SHA placeholder"
+require_pattern "skills/code-review/reference/comment-payload-template.md" '--input <payload-json-file>' "payload template must avoid shell-inlining comment body"
 
 if [[ "$failures" -gt 0 ]]; then
   printf '\ncode-review artifact verification failed: %d issue(s)\n' "$failures"

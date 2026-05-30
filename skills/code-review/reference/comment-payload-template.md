@@ -74,16 +74,26 @@ posting_executed: false
 
 ## Posting Command
 
+Write the approved payload to JSON first. Do not inline markdown body text in shell arguments.
+
+```json
+{
+  "body": "<markdown body>",
+  "commit_id": "<pr-head-sha>",
+  "path": "<file path>",
+  "line": 123,
+  "side": "RIGHT"
+}
+```
+
 ```bash
 gh api \
   --method POST \
   /repos/{owner}/{repo}/pulls/{pull_number}/comments \
-  -f body='<markdown body>' \
-  -f commit_id='<pr-head-sha>' \
-  -f path='<file path>' \
-  -F line=<line> \
-  -f side='<RIGHT-or-LEFT>'
+  --input <payload-json-file>
 ```
+
+Remove the payload file after the posting result is recorded.
 
 ## Result States
 

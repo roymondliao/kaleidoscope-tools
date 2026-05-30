@@ -16,6 +16,7 @@ allowed-tools:
 - Bash(gh api:*)
 - Bash(which gh:*)
 - Read
+- Write
 - Grep
 - Glob
 - Task
@@ -444,22 +445,32 @@ Do not infer approval from general agreement with the review summary. Approval m
 
 ### 9d. Live Posting Command
 
-For each approved payload, post an independent line comment:
+For each approved payload, post an independent line comment from a JSON payload file. Do not inline markdown `body`, `path`, or other payload values into shell command arguments; review comments can contain quotes, backticks, or newlines.
+
+Write a per-payload JSON file:
+
+```json
+{
+  "body": "<markdown body>",
+  "commit_id": "<head sha>",
+  "path": "<file path>",
+  "line": 123,
+  "side": "RIGHT"
+}
+```
+
+Then call:
 
 ```bash
 gh api \
   --method POST \
   /repos/{owner}/{repo}/pulls/{pull_number}/comments \
-  -f body='<markdown body>' \
-  -f commit_id='<head sha>' \
-  -f path='<file path>' \
-  -F line=<line> \
-  -f side='<RIGHT-or-LEFT>'
+  --input <payload-json-file>
 ```
 
 Use the owner, repo, and pull number from the PR URL or `gh pr view` metadata. The PR URL pattern must be `https://github.com/{owner}/{repo}/pull/{number}`. If the URL and metadata disagree, stop with posting outcome `unknown`.
 
-Post only approved payloads. Never post blocked payloads.
+Post only approved payloads. Never post blocked payloads. Remove payload files after reporting posting results.
 
 ### 9e. Posting Results
 
