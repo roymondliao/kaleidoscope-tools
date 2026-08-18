@@ -4,15 +4,17 @@ Mechanics only. Content structure comes from [content-template.md](../references
 
 ## Tools
 
-- Discover: `mcp__claude_ai_Linear__list_teams`, `list_projects`, `list_issues`
+Tool names below are as exposed by the connected Linear MCP server — portable across whichever coding agent is connected to it. Do not prefix them with a coding-agent-specific namespace in this file (e.g. Claude Code additionally wraps them as `mcp__<server-id>__<tool>`; other agents may wrap or expose them differently). Resolve the actual callable name from the active session's tool list before calling — Linear MCP server implementations vary more than Jira's does (see note below), so verify the write pattern (upsert vs. separate create/update) actually matches what's connected before assuming this section is exact.
+
+- Discover: `list_teams`, `list_projects`, `list_issues`
 - Read: `get_project`, `get_issue`
-- Write (upsert — same call for create and update): `save_project`, `save_issue`
+- Write (upsert — same call for create and update, on the server this was documented against): `save_project`, `save_issue`
 - Comment: `save_comment` (write), `list_comments` (read)
 - Status: `list_issue_statuses` (per team), `get_issue_status`
 - Milestones: `list_milestones`, `get_milestone`, `save_milestone`
 - People: `list_users`, `get_user`
 
-`save_issue` and `save_project` are upserts: omit `id` to create, pass an existing `id` to update. There is no separate `create_issue`/`update_issue` pair — do not look for one.
+`save_issue` and `save_project` are upserts on this server: omit `id` to create, pass an existing `id` to update. If the connected server instead exposes separate `create_issue`/`update_issue` tools, use those the same way — the upsert-vs-split-call choice is a per-server API design decision, not part of the canonical model this skill assumes.
 
 ## Hierarchy → object model
 
@@ -35,7 +37,7 @@ Statuses are per-team, not global. Call `list_issue_statuses { team: "<team>" }`
 ## Create project
 
 ```
-mcp__claude_ai_Linear__save_project
+save_project
 {
   "name": "<title>",
   "teamIds": ["<team-id>"],
@@ -47,7 +49,7 @@ mcp__claude_ai_Linear__save_project
 ## Create issue / sub-issue
 
 ```
-mcp__claude_ai_Linear__save_issue
+save_issue
 {
   "title": "<title>",
   "teamId": "<team-id>",

@@ -73,7 +73,7 @@ Each covers: tool names, the tier → platform-object mapping, assignee/user res
 1. **Create/update project or epic** — Project/Epic tier, fixed template. Update = re-draft the changed sections only, show a diff-shaped summary of what's changing before writing.
 2. **Create/update issue** — Issue/Task/Story (Parent) tier, domain template.
 3. **Create/update sub-issue** — Issue/Sub-task (Child) tier, domain template. Requires an identified parent (ask for it if not given — don't guess which open issue is the parent).
-4. **Change issue status** — a single ad-hoc move. Resolve the target state through the provider's status mechanism (Jira: no dedicated transition tool in this skill's toolset, follow [references/provider-routing.md](references/provider-routing.md); Linear: `list_issue_statuses` then `save_issue` with `stateId`). For sequencing work through a full lifecycle, that's Orchestrate mode, not this.
+4. **Change issue status** — a single ad-hoc move. Resolve the target state through the provider's status mechanism (Jira: `jira_get_transitions` then `jira_transition_issue`; Linear: `list_issue_statuses` then `save_issue` with `stateId`) — see [providers/jira.md](providers/jira.md) / [providers/linear.md](providers/linear.md). For sequencing work through a full lifecycle, that's Orchestrate mode, not this.
 5. **Update comment** — draft the comment text, get approval, post via the provider's comment tool.
 
 ### Step 5: Verify and report
