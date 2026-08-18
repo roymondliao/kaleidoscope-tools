@@ -1,9 +1,6 @@
----
-name: execute-assigned-ticket
-description: Execute or review one explicitly assigned implementation ticket without taking over backlog orchestration. Use when an agent or subagent receives a ticket ID, bounded scope, repository references, ownership boundaries, acceptance criteria, and validation requirements from a coordinating agent. Support Linear, Jira, GitHub Issues, and repository-local task specifications while preserving main-agent control of sequencing and ticket state.
----
+# Execute-Assigned Mode
 
-# Execute an Assigned Ticket
+For an agent or sub-agent that received one explicitly assigned ticket — a ticket ID, bounded scope, repository references, ownership boundaries, acceptance criteria, and validation requirements from a coordinating agent (see [orchestrate.md](orchestrate.md) and [delegation-contract.md](delegation-contract.md)). Supports Linear, Jira, GitHub Issues, and repository-local task specifications while preserving main-agent control of sequencing and ticket state.
 
 Work on the assigned ticket only. Do not select another ticket, expand the phase, or infer permission to manage the backlog.
 
@@ -11,7 +8,7 @@ Work on the assigned ticket only. Do not select another ticket, expand the phase
 
 1. Confirm the ticket identifier, task goal, owned files or modules, excluded scope, acceptance criteria, and required validation.
 2. Read the external ticket when access is provided, but do not mutate its status, assignment, or content unless that authority is explicit.
-3. Load repository context according to [references/context-loading.md](references/context-loading.md).
+3. Load repository context according to [context-loading.md](context-loading.md).
 4. Inspect the current Git state and existing implementation before editing. Preserve unrelated and user-owned changes.
 
 If the external provider is unavailable, use repository specifications only when they provide an unambiguous task contract. Report that the ticket could not be read rather than inventing missing details.
@@ -53,6 +50,6 @@ Review the final diff for:
 
 ## Report completion or blockage
 
-Format the handoff with [references/execution-report.md](references/execution-report.md). Provide evidence, not only a completion claim.
+Format the handoff with [execution-report.md](execution-report.md). Provide evidence, not only a completion claim.
 
 Do not mark the ticket completed, commit, push, or start another ticket unless the coordinating agent explicitly granted that authority. A successful execution ends when all assigned acceptance criteria are evidenced and the report is delivered. A blocked execution ends when the exact blocker, completed work, remaining work, and required decision are reported.

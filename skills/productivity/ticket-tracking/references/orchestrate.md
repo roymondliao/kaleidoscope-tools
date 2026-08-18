@@ -1,9 +1,6 @@
----
-name: orchestrate-ticket-work
-description: Coordinate ticket-driven implementation across a main agent and assigned agents. Use when selecting, sequencing, assigning, reviewing, or advancing work tracked in Linear, Jira, GitHub Issues, or repository-local change specifications; when preparing a self-contained delegation brief; or when reconciling ticket state with repository evidence. Keep provider-specific operations behind a normalized workflow.
----
+# Orchestrate Mode
 
-# Orchestrate Ticket Work
+For a main/coordinating agent selecting, sequencing, delegating, reviewing, or advancing ticket-driven implementation work — in Linear, Jira, GitHub Issues, or repository-local change specifications.
 
 Treat the ticket as a context router and coordination record, not as the sole source of truth. Keep design decisions and executable specifications in the repository.
 
@@ -13,7 +10,7 @@ Treat the ticket as a context router and coordination record, not as the sole so
 2. Read the ticket, its parent or phase, dependencies, acceptance criteria, and linked repository paths.
 3. Inspect the referenced repository content and current Git state before deciding that work is ready.
 4. Apply repository instructions such as `AGENTS.md` before any ticket-specific instructions.
-5. Normalize the ticket against [references/ticket-contract.md](references/ticket-contract.md) when creating, editing, or validating ticket content.
+5. Normalize the ticket against [ticket-contract.md](ticket-contract.md) when creating, editing, or validating ticket content.
 
 Use repository-relative paths in tickets. Keep credentials, tokens, personal data, production identifiers, and other secrets out of the tracker.
 
@@ -42,13 +39,13 @@ Move a ticket into active work only when all of these conditions hold:
 - Its file ownership does not overlap unsafe concurrent work.
 - The assigned agent has a bounded task and validation contract.
 
-Use the normalized lifecycle `planned → ready → in_progress → in_review → completed`. Map it to the provider's actual states as described in [references/provider-routing.md](references/provider-routing.md) whenever reading or mutating an external tracker.
+Use the normalized lifecycle `planned → ready → in_progress → in_review → completed`. Map it to the provider's actual states as described in [provider-routing.md](provider-routing.md) whenever reading or mutating an external tracker.
 
 Mark a ticket blocked only when a concrete dependency, unresolved contradiction, missing authority, or unavailable required system prevents meaningful progress. Record the blocker and the condition that would unblock it.
 
 ## Delegate one bounded assignment
 
-Before delegating, read [references/delegation-contract.md](references/delegation-contract.md) and provide every required field. Include the ticket identifier and essential context directly; do not send only a ticket link or tell the agent to find the next available task.
+Before delegating, read [delegation-contract.md](delegation-contract.md) and provide every required field. Include the ticket identifier and essential context directly; do not send only a ticket link or tell the agent to find the next available task. The assigned agent follows [execute-assigned.md](execute-assigned.md).
 
 Assign explicit ownership for files or modules. Reserve shared files for one agent at a time, or sequence work that must touch them. State whether the agent may:
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ticket Tracking"
+  short_description: "Create, update, orchestrate, and execute Jira/Linear tickets"
+  default_prompt: "Use $ticket-tracking to create or update a project/epic, issue, or sub-issue, change its status, comment, coordinate ticket-driven work across agents, or execute an assigned ticket."

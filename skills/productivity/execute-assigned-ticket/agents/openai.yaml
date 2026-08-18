@@ -1,4 +1,0 @@
-interface:
-  display_name: "Execute Assigned Ticket"
-  short_description: "Implement one assigned ticket within strict boundaries"
-  default_prompt: "Use $execute-assigned-ticket to implement the ticket assigned by the main agent."

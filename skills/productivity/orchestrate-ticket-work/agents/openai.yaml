@@ -1,4 +1,0 @@
-interface:
-  display_name: "Orchestrate Ticket Work"
-  short_description: "Coordinate ticket-driven agent implementation workflows"
-  default_prompt: "Use $orchestrate-ticket-work to select, delegate, review, and advance an implementation ticket."
