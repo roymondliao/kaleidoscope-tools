@@ -231,3 +231,6 @@ changes/*/artifacts/
 changes/*/experiment/
 tests/samsara/code-quality-reviewer/
 .samsara
+
+# eval run output (raw API responses, per-run cost data)
+eval/results/

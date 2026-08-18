@@ -1,5 +1,5 @@
 ---
-name: obsidian-organizer
+name: zettelkasten-organizer
 description: >
   Organize and normalize an Obsidian vault in a Research-Optimized Zettelkasten style.
   Use when asked to scan/analyze an Obsidian vault, generate Report.md and an executable Plan.md,
